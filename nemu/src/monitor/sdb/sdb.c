@@ -18,6 +18,8 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 #include "sdb.h"
+#include <memory/paddr.h>
+#include <memory/vaddr.h>
 
 static int is_batch_mode = false;
 
@@ -55,7 +57,8 @@ static int cmd_help(char *args);
 /*new*/
 static int cmd_si(char *args);
 static int cmd_info(char *args);
-/*static int cmd_x(char *args);*/
+static int cmd_x(char *args);
+static int cmd_p(char *args);
 /*new*/
 
 static struct {
@@ -68,8 +71,9 @@ static struct {
   /**/
   { "si", "Single-step exection",cmd_si},
   { "info", "printf",cmd_info},
- /* { "x", "Scan memory", cmd_x},*/
+  { "x", "Scan memory", cmd_x},
   { "q", "Exit NEMU", cmd_q },
+  { "p", "expression",cmd_p},
   
   /* TODO: Add more commands */
 
@@ -130,7 +134,7 @@ static int cmd_info(char *args)
 
 
 //扫描内存
-/*
+
 static int cmd_x(char *args)
 {
     char *arg1=strtok(NULL," ");
@@ -157,7 +161,15 @@ printf("Unknown input,please try it in a standard format");
         printf("\n");
     }
     return 0;
-}*/
+}
+
+static int cmd_p(char *args){
+    char *e=strtok(args,"\n");
+    bool t=true;
+    expr(e,&t);
+    return 0;
+}
+
 void sdb_set_batch_mode() {
   is_batch_mode = true;
 }
