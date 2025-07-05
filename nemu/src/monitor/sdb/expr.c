@@ -19,7 +19,8 @@
  * Type 'man regex' for more information about POSIX regex functions.
  */
 #include <regex.h>
-
+#include <memory/vaddr.h>
+#include <memory/paddr.h>
 typedef struct token {
     int type;
     char str[32];
@@ -263,6 +264,5 @@ word_t expr(char *e, bool *success) {
   *success=true;
   return result;
   /* TODO: Insert codes to evaluate the expression. */
-  printf("%d",result);
   return 0;
 }
