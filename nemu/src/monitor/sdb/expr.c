@@ -20,8 +20,17 @@
  */
 #include <regex.h>
 
+typedef struct token {
+    int type;
+    char str[32];
+ } Token;
+
 enum {
-  TK_NOTYPE = 256, TK_EQ,
+  TK_NOTYPE = 0,
+  TK_PLUS,TK_MINUS,TK_MUL,TK_DIV,//+-*/
+  TK_EQ,TK_NEQ,TK_GT,TK_LT,TK_GE,TK_LE,//==,!=,>,<,>=,<=
+  TK_AND,TK_OR,TK_NUM,TK_LPAREN,TK_RPAREN,//&&,||,十进制整数,(,)
+  TK_HEX,TK_REG,TK_DEREF//十六进制、寄存器、指针解引用
 
   /* TODO: Add more token types */
 
@@ -36,15 +45,33 @@ static struct rule {
    * Pay attention to the precedence level of different rules.
    */
 
-  {" +", TK_NOTYPE},    // spaces
-  {"\\+", '+'},         // plus
-  {"==", TK_EQ},        // equal
+    {" +",TK_NOTYPE},    
+    {"\\(",TK_LPAREN},    
+    {"\\)",TK_RPAREN},    
+    {"\\+",TK_PLUS},      
+    {"-",TK_MINUS},    
+    {"\\*",TK_MUL},      
+    {"/",TK_DIV},      
+    {"==",TK_EQ},       
+    {"!=",TK_NEQ},      
+    {">=",TK_GE},       
+    {"<=",TK_LE},       
+    {">",TK_GT},       
+    {"<",TK_LT},        
+    {"&&",TK_AND},       
+    {"\\|\\|",TK_OR},        
+    {"0x[0-9a-fA-F]+",TK_HEX},//十六进制    
+    {"\\$[a-zA-Z0-9]+",TK_REG},//寄存器   
+    {"[0-9]+",TK_NUM},//十进制
+
+
 };
 
 #define NR_REGEX ARRLEN(rules)
 
 static regex_t re[NR_REGEX] = {};
-
+static Token tokens[32] __attribute__((used)) ={};
+static int nr_token __attribute__((used))  = 0;
 /* Rules are used for many times.
  * Therefore we compile them only once before any usage.
  */
@@ -62,64 +89,180 @@ void init_regex() {
   }
 }
 
-typedef struct token {
-  int type;
-  char str[32];
-} Token;
-
-static Token tokens[32] __attribute__((used)) = {};
-static int nr_token __attribute__((used))  = 0;
-
-static bool make_token(char *e) {
-  int position = 0;
-  int i;
-  regmatch_t pmatch;
-
-  nr_token = 0;
-
-  while (e[position] != '\0') {
-    /* Try all rules one by one. */
-    for (i = 0; i < NR_REGEX; i ++) {
-      if (regexec(&re[i], e + position, 1, &pmatch, 0) == 0 && pmatch.rm_so == 0) {
-        char *substr_start = e + position;
-        int substr_len = pmatch.rm_eo;
-
-        Log("match rules[%d] = \"%s\" at position %d with len %d: %.*s",
-            i, rules[i].regex, position, substr_len, substr_len, substr_start);
-
-        position += substr_len;
-
-        /* TODO: Now a new token is recognized with rules[i]. Add codes
-         * to record the token in the array `tokens'. For certain types
-         * of tokens, some extra actions should be performed.
-         */
-
-        switch (rules[i].token_type) {
-          default: TODO();
+static bool check_parentheses(int p,int q){
+    if(tokens[p].type!=TK_LPAREN ||tokens[q].type!=TK_RPAREN)
+        return false;
+    int count=0;
+    for(int i=p;i<=q;i++){
+    if(tokens[i].type==TK_LPAREN) count++;
+    else if(tokens[i].type==TK_RPAREN){
+        count--;
+        if(count<0) return false;
         }
-
-        break;
-      }
+        if(count==0 && i!=q) return false;
     }
-
-    if (i == NR_REGEX) {
-      printf("no match at position %d\n%s\n%*.s^\n", position, e, position, "");
-      return false;
-    }
-  }
-
-  return true;
+    return count==0;
 }
 
+static int find(int p,int q){
+    int priority=-1;
+    int pos=-1;
+    int bracket_count=0;
+
+    static const int OP_PRIORITY[256]={
+        [TK_OR]=7,
+        [TK_AND]=6,
+        [TK_EQ]=5,[TK_NEQ]=5,
+        [TK_LT]=4,[TK_LE]=4,[TK_GT]=4,[TK_GE]=4,
+        [TK_PLUS]=3,[TK_MINUS]=3,
+        [TK_MUL]=2,[TK_DIV]=2,
+        [TK_DEREF]=1
+    };
+    for (int i = p; i <= q; i++) {
+        if (tokens[i].type == TK_LPAREN)
+            bracket_count++;
+        else if (tokens[i].type == TK_RPAREN)
+            bracket_count--;
+        if (bracket_count == 0 && OP_PRIORITY[tokens[i].type] > priority) {
+            priority = OP_PRIORITY[tokens[i].type];
+            pos = i;
+        }
+    }
+    return pos;
+}
+    static void recognize_deref(){
+        for(int i=0;i<nr_token;i++){
+            if(tokens[i].type==TK_MUL){
+                if(i==0||
+                    tokens[i-1].type==TK_PLUS||
+                    tokens[i-1].type==TK_MINUS||
+                    tokens[i-1].type==TK_MUL||
+                    tokens[i-1].type==TK_DIV||
+                    tokens[i-1].type==TK_LPAREN||
+                    tokens[i-1].type==TK_EQ||
+                    tokens[i-1].type==TK_NEQ||
+                    tokens[i-1].type==TK_AND||
+                    tokens[i-1].type==TK_OR){
+                    tokens[i].type=TK_DEREF;
+                }
+            }
+        }
+    }
+
+static bool make_token(char *e){
+        int position = 0;
+        regmatch_t pmatch;
+        nr_token = 0;
+        while (e[position] != '\0') {
+            int matched=0;
+            for (int i = 0; i < NR_REGEX; i ++) {
+                if (regexec(&re[i], e + position, 1, &pmatch, 0) == 0 && pmatch.rm_so == 0) {
+                    char *substr_start = e + position;
+                    int substr_len = pmatch.rm_eo;
+
+                    //跳过空格
+                    if(rules[i].token_type==TK_NOTYPE){
+                        position+=substr_len;
+                        matched=1;
+                        break;
+                    }
+
+                    if(nr_token>=32){
+                        fprintf(stderr,"error,超出最大数量限制");
+                        return false;
+                    }
+                    int copy_len =substr_len < 31 ? substr_len : 31;
+                    strncpy(tokens[nr_token].str, substr_start, copy_len);
+                    tokens[nr_token].str[copy_len] = '\0';
+                    tokens[nr_token].type = rules[i].token_type;
+                    // 特殊处理寄存器符号
+                    if (rules[i].token_type == TK_REG) {
+                        tokens[nr_token].type = TK_REG;
+                    } nr_token++;
+                position += substr_len;
+                printf("match rules[%d] = \"%s\" at position %d with len %d: %.*s\n",i, rules[i].regex, position - substr_len, substr_len, substr_len, substr_start);
+                matched = 1;
+                break;
+            }
+        }
+        if(!matched){
+            fprintf(stderr,"无法识别字符%s",e+position);
+            return false;
+        }
+    }
+    return true;
+}
+
+static long eval(int p, int q,bool *success) {
+    if (p > q){
+        *success=false;
+        return 0;
+    }
+    if (p == q) {  // 单个数字
+        if (tokens[p].type == TK_NUM) return strtol(tokens[p].str, NULL, 10);
+        // 其他类型（如十六进制、寄存器）需额外处理
+        *success=false;
+        fprintf(stderr, "未知 token 类型\n");
+        return 0;
+    }
+    if (check_parentheses(p, q)) {  // 处理括号
+        return eval(p + 1, q - 1,success);
+    }
+    int op_pos = find(p, q);
+    if(op_pos==-1){
+        *success=false;
+        return 0;
+    }
+
+    // 找最高优先级运算符
+    word_t left = eval(p, op_pos - 1,success);
+    if(!*success) return 0;
+    word_t right = eval(op_pos + 1, q,success);
+    if(!*success) return 0;
+    // 计算运算符
+    switch (tokens[op_pos].type) {
+        case TK_PLUS:
+            return left + right;
+        case TK_MINUS:
+            return left - right;
+        case TK_MUL:
+            return left * right;
+        case TK_DIV:
+            return left / right;
+        case TK_EQ:
+            return left==right;
+        case TK_NEQ:
+            return left!=right;
+        case TK_GT:
+            return left>right;
+        case TK_LT:
+            return left<right;
+        case TK_GE:
+            return left>=right;
+        case TK_LE:
+            return left<=right;
+        case TK_AND:
+            return left&&right;
+        case TK_OR:
+            return left||right;
+        // 其他运算符（如逻辑、比较）需额外处理
+        default:
+            *success=false;
+            return 0;
+    }
+}
 
 word_t expr(char *e, bool *success) {
   if (!make_token(e)) {
     *success = false;
     return 0;
   }
-
+  recognize_deref();
+  bool eval_success=true;
+  word_t result=eval(0,nr_token-1,&eval_success);
+  *success=true;
+  return result;
   /* TODO: Insert codes to evaluate the expression. */
-  TODO();
 
   return 0;
 }
