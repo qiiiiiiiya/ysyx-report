@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
 #endif
 
     // 检查参数（使用input文件作为测试用例）
-    FILE *fp = fopen("input", "r");
+    FILE *fp = fopen("./../tools/gen-expr/build/input", "r");
     if (!fp) {
         printf("无法打开测试用例文件 input\n");
         return 1;
