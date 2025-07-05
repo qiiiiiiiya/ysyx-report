@@ -18,12 +18,13 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 #include "sdb.h"
+#include <memory/paddr.h>
+#include <memory/vaddr.h>
 
 static int is_batch_mode = false;
 
 void init_regex();
 void init_wp_pool();
-
 /* We use the `readline' library to provide more flexibility to read from stdin. */
 static char* rl_gets() {
   static char *line_read = NULL;
@@ -53,6 +54,12 @@ static int cmd_q(char *args) {
 }
 
 static int cmd_help(char *args);
+/*new*/
+static int cmd_si(char *args);
+static int cmd_info(char *args);
+static int cmd_x(char *args);
+static int cmd_p(char *args);
+/*new*/
 
 static struct {
   const char *name;
@@ -61,8 +68,13 @@ static struct {
 } cmd_table [] = {
   { "help", "Display information about all supported commands", cmd_help },
   { "c", "Continue the execution of the program", cmd_c },
+  /**/
+  { "si", "Single-step exection",cmd_si},
+  { "info", "printf",cmd_info},
+  { "x", "Scan memory", cmd_x},
   { "q", "Exit NEMU", cmd_q },
-
+  { "p", "expression",cmd_p},
+  
   /* TODO: Add more commands */
 
 };
@@ -90,6 +102,72 @@ static int cmd_help(char *args) {
     printf("Unknown command '%s'\n", arg);
   }
   return 0;
+}
+/**/
+static int cmd_si(char *args)
+{
+    char *arg=strtok(NULL," ");
+    int num_per=0;
+    if(arg==NULL)
+    {
+        cpu_exec(1);
+    }else{
+        num_per=atoi(arg);
+        if(arg==0){
+            printf("Unknown input,please try it in a standard format");
+            return 0;}
+        cpu_exec(num_per);}
+    return 0;
+}
+
+//打印寄存器
+static int cmd_info(char *args)
+{
+    char *arg=strtok(NULL," ");
+    if(strcmp(arg, "r")==0) isa_reg_display();
+    /*
+    else if(strcmp(arg,"w")==0) display_wp();
+    */
+    else printf("Unknown input,please try it in a standard format");
+    return 0;
+}
+
+
+//扫描内存
+
+static int cmd_x(char *args)
+{
+    char *arg1=strtok(NULL," ");
+    if(arg1==NULL) {
+        printf("Unknown input,please try it in a standard format");
+        return 0;
+    }
+    char *arg2=strtok(NULL," ");
+    if(arg2==NULL) {
+printf("Unknown input,please try it in a standard format");
+        return 0;
+    }
+    int n=strtol(arg1,NULL,10);
+    vaddr_t base_addr=strtol(arg2,NULL,16);
+    for(int i=0;i<n;)
+    {
+        printf("0x%08x:",base_addr);
+        for(int j=0;i<n&&j<4;i++,j++)
+        {
+            word_t data=vaddr_read(base_addr,4);
+            printf("0x%08x\t",data);
+            base_addr+=4;
+        }
+        printf("\n");
+    }
+    return 0;
+}
+
+static int cmd_p(char *args){
+    char *e=strtok(args,"\n");
+    bool t=true;
+    expr(e,&t);
+    return 0;
 }
 
 void sdb_set_batch_mode() {
