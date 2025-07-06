@@ -12,7 +12,6 @@
 *
 * See the Mulan PSL v2 for more details.
 ***************************************************************************************/
-
 #include <isa.h>
 
 /* We use the POSIX regex functions to process regular expressions.
@@ -73,7 +72,7 @@ static struct rule {
 
 static regex_t re[NR_REGEX] = {};
 static Token tokens[32] __attribute__((used)) ={};
-static int nr_token __attribute__((used))  = 0;
+static int nr_token  __attribute__((used))  = 0;
 /* Rules are used for many times.
  * Therefore we compile them only once before any usage.
  */
