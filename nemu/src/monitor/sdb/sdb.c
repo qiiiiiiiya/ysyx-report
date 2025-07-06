@@ -163,11 +163,48 @@ printf("Unknown input,please try it in a standard format");
     return 0;
 }
 
-static int cmd_p(char *args){
+/*static int cmd_p(char *args){
     char *e=strtok(args,"\n");
     bool t=true;
     expr(e,&t);
     return 0;
+}*/
+/*
+static int cmd_p(char *args) {
+  if (args == NULL || *args == '\0') {
+    printf("Usage: p <expression>\n");
+    return;
+  }
+  char *e=strtok(args,"\n");
+  bool t=true;
+  expr(e,&t);
+  //extern const int *result[];
+  if (t) {
+    // 输出结果（支持十六进制和十进制）
+    printf("0x%x (%u)\n", (unsigned)result, (unsigned)result);
+  } else {
+    printf("Failed to evaluate expression: %s\n", args);
+  }
+  return 0;
+}
+*/
+static int cmd_p(char *args) {
+  if (args == NULL || *args == '\0') {  // 检查是否有输入的表达式
+    printf("Usage: p <expression>\n");
+    return 0;
+  }
+
+  bool success;  // 标记表达式计算是否成功
+  // 调用expr计算表达式，将结果保存到result变量中
+  word_t result = expr(args, &success);
+
+  if (success) {
+    // 输出结果（以十六进制和十进制两种形式）
+    printf("0x%x (%u)\n", (unsigned)result, (unsigned)result);
+  } else {
+    printf("Failed to evaluate expression: %s\n", args);
+  }
+  return 0;
 }
 
 void sdb_set_batch_mode() {
