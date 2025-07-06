@@ -44,7 +44,7 @@ static struct rule {
    * Pay attention to the precedence level of different rules.
    */
     {"0x[0-9a-fA-F]+",TK_HEX},  // 以"0x"开头
-    {"\\[&a-z][a-z0-9]+",TK_REG}, // 寄存器
+    {"\\[a-z][a-z0-9]+",TK_REG}, // 寄存器
     {"\\-",TK_MINUS_F},//负数
     {" +",TK_NOTYPE},
     {"\\(",TK_LPAREN},
