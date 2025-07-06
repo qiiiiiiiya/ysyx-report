@@ -22,6 +22,7 @@ const char *regs[] = {
   "a6", "a7", "s2", "s3", "s4", "s5", "s6", "s7",
   "s8", "s9", "s10", "s11", "t3", "t4", "t5", "t6"
 };
+ 
 
 void isa_reg_display() {
     int count=0;
@@ -33,7 +34,7 @@ void isa_reg_display() {
             printf("\n");
             count=0;}
     }
-}    
+}  
 
 word_t isa_reg_str2val(const char *s, bool *success) {
   return 0;
