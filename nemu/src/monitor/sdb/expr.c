@@ -304,7 +304,7 @@ word_t expr(char *e, bool *success) {
   word_t result=eval(0,nr_token-1,&eval_success);
   *success=true;
   return result;
-  printf("%u",(unsigned)result);
+  printf("计算结果：%u\n", (unsigned)result);
   /* TODO: Insert codes to evaluate the expression. */
   return 0;
 }
