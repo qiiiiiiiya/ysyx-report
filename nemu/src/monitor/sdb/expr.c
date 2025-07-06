@@ -1,4 +1,4 @@
-/***************************************************************************************
+/**************************************************************************************
 * Copyright (c) 2014-2024 Zihao Yu, Nanjing University
 *
 * NEMU is licensed under Mulan PSL v2.
@@ -25,7 +25,7 @@ typedef struct token {
     int type;
     char str[32];
  } Token;
-extern const char *regs[];
+
 enum {
   TK_NOTYPE = 0,
   TK_PLUS,TK_MINUS,TK_MUL,TK_DIV,//+-*/
@@ -45,8 +45,7 @@ static struct rule {
   /* TODO: Add more rules.
    * Pay attention to the precedence level of different rules.
    */
-    {"0x[0-9a-fA-F]+",TK_HEX},  // 以"0x"开头
-    {"\\&[a-zA-Z0-9]+",TK_REG}, // 以"$"开头
+
     {" +",TK_NOTYPE},    
     {"\\(",TK_LPAREN},    
     {"\\)",TK_RPAREN},    
@@ -61,10 +60,10 @@ static struct rule {
     {">",TK_GT},       
     {"<",TK_LT},        
     {"&&",TK_AND},       
-    {"\\|\\|",TK_OR},          
+    {"\\|\\|",TK_OR},        
+    {"0x[0-9a-fA-F]+",TK_HEX},//十六进制    
+    {"\\$[a-zA-Z0-9]+",TK_REG},//寄存器   
     {"[0-9]+",TK_NUM},//十进制
-    {"\\*",TK_DEREF},// 指针解引用
-
 
 
 };
@@ -195,59 +194,18 @@ static bool make_token(char *e){
     return true;
 }
 
-// 计算寄存器数量（数组长度）
-const int regs_num = 32;
-
-// 寄存器名转索引（返回-1表示无效）
-static int reg_name2idx(const char* reg_name) {
-    // 处理输入：去掉开头的'$'（统一格式）
-    const char* name = reg_name;
-    if (name[0] == '$') {
-        name++; // 跳过'$'，如"$ra"→"ra"，"$0"→"0"
-    }
-
-    // 遍历regs数组，查找匹配项
-    for (int i = 0; i < regs_num; i++) {
-        // 处理数组元素：去掉开头的'$'（如"$0"→"0"）
-        const char* reg = regs[i];
-        const char* reg_clean = (reg[0] == '$') ? (reg + 1) : reg;
-
-        // 比较处理后的字符串
-        if (strcmp(name, reg_clean) == 0) {
-            return i; // 找到，返回索引（数组下标）
-        }
-    }
-
-    // 未找到
-    return -1;
-}
-
 static long eval(int p, int q,bool *success) {
     if (p > q){
         *success=false;
         return 0;
     }
-    if (p == q) {  // 单个token处理（数字、寄存器）
-        switch (tokens[p].type) {
-            case TK_NUM:  // 十进制数
-                return strtol(tokens[p].str, NULL, 10);
-            case TK_HEX:  // 十六进制数（0x开头）
-                return strtol(tokens[p].str, NULL, 16);
-            case TK_REG: {
-                const char* reg_name = tokens[p].str; // 输入的寄存器名（如"$ra"或"ra"）
-                int idx = reg_name2idx(reg_name);     // 转换为索引
-                if (idx == -1) { // 无效寄存器
-                *success = false;
-                return 0;
+    if (p == q) {  // 单个数字
+        if (tokens[p].type == TK_NUM) return strtol(tokens[p].str, NULL, 10);
+        // 其他类型（如十六进制、寄存器）需额外处理
+        *success=false;
+        fprintf(stderr, "未知 token 类型\n");
+        return 0;
     }
-                return cpu.gpr[idx];
-}         
-            default:
-                *success = false;
-                return 0;
-        }
-    }
-
     if (check_parentheses(p, q)) {  // 处理括号
         return eval(p + 1, q - 1,success);
     }
