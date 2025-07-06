@@ -261,9 +261,12 @@ static long eval(int p, int q,bool *success) {
                 if (idx == -1) { // 无效寄存器
                 *success = false;
                 return 0;
-    }
+            }
                 return cpu.gpr[idx];
-}
+            }
+            case TK_MINUS_F:{
+                return -TK_MINUS_F;
+            }
             default:
                 *success = false;
                 return 0;
@@ -286,8 +289,7 @@ recognize_minus();
     if(!*success) return 0;
     // 计算运算符
     switch (tokens[op_pos].type) {
-        case TK_MINUS_F:
-            return -right;
+        
         case TK_REG: {
                 // 使用 isa_reg_str2val API 获取寄存器值
                 bool reg_success;
