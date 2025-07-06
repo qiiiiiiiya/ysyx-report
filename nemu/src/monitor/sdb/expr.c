@@ -31,8 +31,7 @@ enum {
   TK_EQ,TK_NEQ,TK_GT,TK_LT,TK_GE,TK_LE,//==,!=,>,<,>=,<=
   TK_AND,TK_OR,TK_NUM,TK_LPAREN,TK_RPAREN,//&&,||,十进制整数,(,)
   TK_HEX,TK_REG,TK_DEREF,TK_MINUS_F//十六进制、寄存器、指针解引用、负数
-
-  /* TODO: Add more token types */
+/*TODO: Add more token types */
 
 };
 
@@ -51,8 +50,8 @@ static struct rule {
     {"\\(",TK_LPAREN},
     {"\\)",TK_RPAREN},
     {"\\+",TK_PLUS},
-    {"\\-",TK_MINUS},
-    {"\\*",TK_MUL},//减法
+    {"\\-",TK_MINUS},//减
+    {"\\*",TK_MUL},
     {"/",TK_DIV},
     {"==",TK_EQ},
     {"!=",TK_NEQ},
@@ -118,7 +117,7 @@ static int find(int p,int q){
         [TK_LT]=4,[TK_LE]=4,[TK_GT]=4,[TK_GE]=4,
         [TK_PLUS]=3,[TK_MINUS]=3,
         [TK_MUL]=2,[TK_DIV]=2,
-        [TK_DEREF]=1,[TK_MINUS_F]=1,
+        [TK_DEREF]=1
     };
     for (int i = p; i <= q; i++) {
         if (tokens[i].type == TK_LPAREN)
@@ -150,6 +149,17 @@ static int find(int p,int q){
             }
         }
     }
+    static void recognize_minus(){
+        for(int i=0;i<nr_token;i++){
+            if(tokens[i].type==TK_MINUS){
+                if(tokens[i-1].type!=TK_NUM)
+                {
+                    tokens[i].type=TK_MINUS_F;}
+            }
+        }
+    }
+
+
 
 static bool make_token(char *e){
         int position = 0;
@@ -256,7 +266,7 @@ static long eval(int p, int q,bool *success) {
         *success=false;
         return 0;
     }
-
+recognize_minus();
     // 找最高优先级运算符
     word_t left = eval(p, op_pos - 1,success);
     if(!*success) return 0;
@@ -264,6 +274,8 @@ static long eval(int p, int q,bool *success) {
     if(!*success) return 0;
     // 计算运算符
     switch (tokens[op_pos].type) {
+        case TK_MINUS_F:
+            return -right;
         case TK_PLUS:
             return left + right;
         case TK_MINUS:
@@ -271,6 +283,10 @@ static long eval(int p, int q,bool *success) {
         case TK_MUL:
             return left * right;
         case TK_DIV:
+        if(right==0){
+            *success=false;
+            return 0;
+        }
             return left / right;
         case TK_EQ:
             return left==right;
@@ -303,9 +319,8 @@ word_t expr(char *e, bool *success) {
   recognize_deref();
   bool eval_success=true;
   word_t result=eval(0,nr_token-1,&eval_success);
-  *success=true;
+  *success=eval_success;
   return result;
-  printf("计算结果：%u\n", (unsigned)result);
   /* TODO: Insert codes to evaluate the expression. */
   return 0;
 }
