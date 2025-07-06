@@ -30,7 +30,7 @@ enum {
   TK_PLUS,TK_MINUS,TK_MUL,TK_DIV,//+-*/
   TK_EQ,TK_NEQ,TK_GT,TK_LT,TK_GE,TK_LE,//==,!=,>,<,>=,<=
   TK_AND,TK_OR,TK_NUM,TK_LPAREN,TK_RPAREN,//&&,||,十进制整数,(,)
-  TK_HEX,TK_REG,TK_DEREF//十六进制、寄存器、指针解引用
+  TK_HEX,TK_REG,TK_DEREF,TK_MINUS_F//十六进制、寄存器、指针解引用、负数
 
   /* TODO: Add more token types */
 
@@ -46,12 +46,13 @@ static struct rule {
    */
     {"0x[0-9a-fA-F]+",TK_HEX},  // 以"0x"开头
     {"\\&[a-zA-Z0-9]+",TK_REG}, // 以"$"开头
+    {"\\-",TK_MINUS_F},//负数
     {" +",TK_NOTYPE},
     {"\\(",TK_LPAREN},
     {"\\)",TK_RPAREN},
     {"\\+",TK_PLUS},
-    {"-",TK_MINUS},
-    {"\\*",TK_MUL},
+    {"\\-",TK_MINUS},
+    {"\\*",TK_MUL},//减法
     {"/",TK_DIV},
     {"==",TK_EQ},
     {"!=",TK_NEQ},
@@ -117,7 +118,7 @@ static int find(int p,int q){
         [TK_LT]=4,[TK_LE]=4,[TK_GT]=4,[TK_GE]=4,
         [TK_PLUS]=3,[TK_MINUS]=3,
         [TK_MUL]=2,[TK_DIV]=2,
-        [TK_DEREF]=1
+        [TK_DEREF]=1,[TK_MINUS_F]=1,
     };
     for (int i = p; i <= q; i++) {
         if (tokens[i].type == TK_LPAREN)
