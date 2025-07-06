@@ -110,15 +110,14 @@ static int find(int p,int q){
     int priority=-1;
     int pos=-1;
     int bracket_count=0;
-
+//只考虑二元操作符
     static const int OP_PRIORITY[256]={
-        [TK_OR]=7,
-        [TK_AND]=6,
-        [TK_EQ]=5,[TK_NEQ]=5,
+        [TK_OR]=1,
+        [TK_AND]=2,
+        [TK_EQ]=3,[TK_NEQ]=3,
         [TK_LT]=4,[TK_LE]=4,[TK_GT]=4,[TK_GE]=4,
-        [TK_PLUS]=3,[TK_MINUS]=3,
-        [TK_MUL]=2,[TK_DIV]=2,
-        [TK_DEREF]=1,[TK_MINUS_F]=1,
+        [TK_PLUS]=5,[TK_MINUS]=5,
+        [TK_MUL]=6,[TK_DIV]=6,
     };
     for (int i = p; i <= q; i++) {
         if (tokens[i].type == TK_LPAREN)
