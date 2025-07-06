@@ -287,7 +287,7 @@ recognize_minus();
     // 计算运算符
     switch (tokens[op_pos].type) {
         case TK_MINUS_F:
-            return 1-right;
+            return -right;
         case TK_REG: {
                 // 使用 isa_reg_str2val API 获取寄存器值
                 bool reg_success;
