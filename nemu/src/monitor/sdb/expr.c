@@ -44,7 +44,7 @@ static struct rule {
    * Pay attention to the precedence level of different rules.
    */
     {"0x[0-9a-fA-F]+",TK_HEX},  // 以"0x"开头
-    {"\\&[a-zA-Z0-9]+",TK_REG}, // 以"$"开头
+    {"\\[&a-z][a-z0-9]+",TK_REG}, // 寄存器
     {"\\-",TK_MINUS_F},//负数
     {" +",TK_NOTYPE},
     {"\\(",TK_LPAREN},
@@ -117,7 +117,7 @@ static int find(int p,int q){
         [TK_LT]=4,[TK_LE]=4,[TK_GT]=4,[TK_GE]=4,
         [TK_PLUS]=3,[TK_MINUS]=3,
         [TK_MUL]=2,[TK_DIV]=2,
-        [TK_DEREF]=1
+        [TK_DEREF]=1,[TK_MINUS_F]=1,
     };
     for (int i = p; i <= q; i++) {
         if (tokens[i].type == TK_LPAREN)
@@ -149,6 +149,7 @@ static int find(int p,int q){
             }
         }
     }
+    /*标记*/
     static void recognize_minus(){
         for(int i=0;i<nr_token;i++){
             if(tokens[i].type==TK_MINUS){
@@ -158,7 +159,7 @@ static int find(int p,int q){
             }
         }
     }
-
+/*标记*/
 
 
 static bool make_token(char *e){
@@ -204,10 +205,20 @@ static bool make_token(char *e){
     }
     return true;
 }
-
+/*标记*/
 // 计算寄存器数量（数组长度）
+static int reg_name2idx(const char* reg_name) {
 const int regs_num = 32;
-
+const char* name = reg_name;
+for(int i=0;i<regs_num;i++){
+    const char* reg=regs[i];
+    if(strcmp(name,reg)==0){
+        return i;
+    }
+    }return -1;
+}
+/*标记*/
+/*
 // 寄存器名转索引（返回-1表示无效）
 static int reg_name2idx(const char* reg_name) {
     // 处理输入：去掉开头的'$'（统一格式）
@@ -230,7 +241,7 @@ static int reg_name2idx(const char* reg_name) {
 
     // 未找到
     return -1;
-}
+}*/
 
 static long eval(int p, int q,bool *success) {
     if (p > q){

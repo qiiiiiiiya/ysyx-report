@@ -221,7 +221,7 @@ static void setup_protected_mode(struct kvm_sregs *sregs) {
 }
 
 static uint64_t va2pa(uint64_t va) {
-  if (vcpu.kvm_run->s.regs.sregs.cr0 & CR0_PG) {
+  if (vcpu.kvm_run->s..s.cr0 & CR0_PG) {
     struct kvm_translation t = { .linear_address = va };
     int ret = ioctl(vcpu.fd, KVM_TRANSLATE, &t);
     assert(ret == 0);
@@ -232,7 +232,7 @@ static uint64_t va2pa(uint64_t va) {
 
 static int patching() {
   // patching for special instructions
-  uint32_t pc = va2pa(vcpu.kvm_run->s.regs.regs.rip);
+  uint32_t pc = va2pa(vcpu.kvm_run->s..regs.rip);
   if (pc == 0xffffffff) return 0;
   if (vm.mem[pc] == 0x9c) {  // pushf
     if (vcpu.int_wp_state == STATE_INT_INST) return 0;
