@@ -369,7 +369,7 @@ static struct rule {
     int token_type;
 } rules[] = {
     {"0x[0-9a-fA-F]+", TK_HEX},          // 十六进制数
-    {"\\$?[a-z0-9]{0,3}", TK_REG},  // 寄存器匹配规则（带或不带$）
+    {"\\$?[a-z][a-z0-9]{0,2}", TK_REG},  // 寄存器匹配规则（带或不带$）
     {" +", TK_NOTYPE},                    // 空格
     {"\\(", TK_LPAREN},                   // 左括号
     {"\\)", TK_RPAREN},                   // 右括号
@@ -483,7 +483,6 @@ static word_t eval(int p, int q, bool *success) {
         *success = false;
         return 0;
     }
-    // ========== 修复：处理任意位置的一元操作符 ==========
     if (tokens[p].type == TK_MINUS_F || tokens[p].type == TK_DEREF) {
         word_t val = eval(p + 1, q, success);
         if (!*success) return 0;
@@ -493,7 +492,6 @@ static word_t eval(int p, int q, bool *success) {
             default:         return 0;
         }
     }
-    // ========== 修复结束 ==========
     if (p == q) {
         switch (tokens[p].type) {
             case TK_NUM:  return strtol(tokens[p].str, NULL, 10);
