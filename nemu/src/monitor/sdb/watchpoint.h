@@ -11,8 +11,8 @@ typedef struct watchpoint {
   word_t old_value;     // 表达式的旧值（用于检测变化）
 } WP;
 
-// 全局函数声明（供外部调用）
-#ifdef CONFIG_WATCHPOINT
+// // 全局函数声明（供外部调用）
+// #ifdef CONFIG_WATCHPOINT
 // 初始化watchpoint池（分配空闲节点）
 void init_wp_pool(void);
 
@@ -27,14 +27,14 @@ void wp_remove(int no);
 // 遍历并打印所有活跃的watchpoint
 void wp_iterate(void);
 
-// 全局链表头（指向第一个活跃的watchpoint，供cpu.c检查时遍历）
-extern WP *head;
-#else
-// 未开启配置时，空定义避免编译错误
-#define init_wp_pool() do {} while (0)
-#define wp_watch(expr, res) do {} while (0)
-#define wp_remove(no) do {} while (0)
-#define wp_iterate() do {} while (0)
-#endif  // CONFIG_WATCHPOINT
+// // 全局链表头（指向第一个活跃的watchpoint，供cpu.c检查时遍历）
+// extern WP *head;
+// #else
+// // 未开启配置时，空定义避免编译错误
+// #define init_wp_pool() do {} while (0)
+// #define wp_watch(expr, res) do {} while (0)
+// #define wp_remove(no) do {} while (0)
+// #define wp_iterate() do {} while (0)
+// #endif  // CONFIG_WATCHPOINT
 
 #endif  // __WATCHPOINT_H__
