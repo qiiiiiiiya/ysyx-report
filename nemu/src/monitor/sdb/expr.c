@@ -526,6 +526,7 @@ static word_t eval(int p, int q, bool *success) {
                 }
                 return reg_val;
             }
+            case TK_MINUS: return -strtol(tokens[p].str + 1, NULL, 10); // 处理负数
             default:
                 *success = false;
                 return 0;
