@@ -23,12 +23,12 @@
  * This is useful when you use the `si' command.
  * You can modify this value as you want.
  */
-#define MAX_INST_TO_PRINT 10
+#define MAX_INST_TO_PRINT 10//最多打印十条指令
 
-CPU_state cpu = {};
-uint64_t g_nr_guest_inst = 0;
-static uint64_t g_timer = 0; // unit: us
-static bool g_print_step = false;
+CPU_state cpu = {};//记录CPU的状态（执行到了哪个地址PC，寄存器值等）
+uint64_t g_nr_guest_inst = 0;//统计总共执行了多少条“guest”指令
+static uint64_t g_timer = 0; // unit: us//记录模拟器运行花费了多少时间（单位微秒）
+static bool g_print_step = false;//标记是否需要单步打印指令详情
 
 void device_update();
 
@@ -38,6 +38,35 @@ static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
 #endif
   if (g_print_step) { IFDEF(CONFIG_ITRACE, puts(_this->logbuf)); }
   IFDEF(CONFIG_DIFFTEST, difftest_step(_this->pc, dnpc));
+
+/*new*/
+#ifdef CONFIG_WATCHPOINT
+static void watchpoint_check(){
+  WP *cur=head;
+  while(cur){
+    bool success;
+    word_t new_val=expr(cur->expr,&success);
+    if(!success){
+      printf("表达式有误");
+      cur=cur->next;
+      continue;
+    }
+    if (new_val != cur->old_value) {  // 值变化：触发断点
+      printf("\nWatchpoint %d triggered:\n", cur->NO);
+      printf("Expression: %s\n", cur->expr);
+      printf("Old value: 0x%x\n", cur->old_value);
+      printf("New value: 0x%x\n", new_val);
+      cur->old_value = new_val;  // 更新旧值（下次基于新值检测）
+      nemu_state.state = NEMU_STOP;  // 暂停CPU执行
+      return;  // 找到一个变化即暂停
+    }
+    cur = cur->next;
+  }
+}
+#else
+#define watchpoint_check(addr) do {} while (0)
+#endif 
+/*new*/
 }
 
 static void exec_once(Decode *s, vaddr_t pc) {

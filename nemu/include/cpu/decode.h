@@ -12,7 +12,7 @@
 *
 * See the Mulan PSL v2 for more details.
 ***************************************************************************************/
-
+//头文件保护
 #ifndef __CPU_DECODE_H__
 #define __CPU_DECODE_H__
 
@@ -22,7 +22,7 @@ typedef struct Decode {
   vaddr_t pc;
   vaddr_t snpc; // static next pc
   vaddr_t dnpc; // dynamic next pc
-  ISADecodeInfo isa;
+  ISADecodeInfo isa;//指令集相关的解码信息
   IFDEF(CONFIG_ITRACE, char logbuf[128]);
 } Decode;
 
