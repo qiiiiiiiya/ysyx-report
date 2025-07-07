@@ -483,6 +483,24 @@ static word_t eval(int p, int q, bool *success) {
         *success = false;
         return 0;
     }
+    /**/
+    // 连续一元负号处理
+    int minus_count = 0;
+    while (p <= q && tokens[p].type == TK_MINUS_F) {
+        minus_count++;
+        p++;
+    }
+    if (minus_count > 0) {
+        word_t val = eval(p, q, success);
+        if (!*success) return 0;
+        return (minus_count % 2 == 0) ? val : -val;
+    }
+    if (tokens[p].type == TK_DEREF) {
+        word_t val = eval(p + 1, q, success);
+        if (!*success) return 0;
+        return vaddr_read(val, 4);
+    }
+    /*
     if (tokens[p].type == TK_MINUS_F || tokens[p].type == TK_DEREF) {
         word_t val = eval(p + 1, q, success);
         if (!*success) return 0;
@@ -491,7 +509,7 @@ static word_t eval(int p, int q, bool *success) {
             case TK_DEREF:   return vaddr_read(val, 4);
             default:         return 0;
         }
-    }
+    }*/
     if (p == q) {
         switch (tokens[p].type) {
             case TK_NUM:  return strtol(tokens[p].str, NULL, 10);
