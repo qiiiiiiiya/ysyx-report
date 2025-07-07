@@ -423,7 +423,7 @@ static void recognize_minus() {
             if (i == 0 ||
                 tokens[i-1].type == TK_PLUS ||
                 tokens[i-1].type == TK_MINUS ||
-                tokens[i-1].type == TK_MINUS_F ||
+                //tokens[i-1].type == TK_MINUS_F ||
                 tokens[i-1].type == TK_MUL ||
                 tokens[i-1].type == TK_DIV ||
                 tokens[i-1].type == TK_LPAREN ||
@@ -508,6 +508,7 @@ static word_t eval(int p, int q, bool *success) {
         switch (tokens[p].type) {
             case TK_MINUS_F: return -val;
             case TK_DEREF:   return vaddr_read(val, 4);
+            case TK_MINUS: return -val;
             default:         return 0;
             
         }
