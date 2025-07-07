@@ -417,6 +417,7 @@ static void recognize_deref() {
         }
     }
 }
+/*
 static void recognize_minus() {
     for (int i = 0; i < nr_token; i++) {
         if (tokens[i].type == TK_MINUS) {
@@ -484,7 +485,6 @@ static word_t eval(int p, int q, bool *success) {
         *success = false;
         return 0;
     }
-    /*
     // 连续一元负号处理
     int minus_count = 0;
     while (p <= q && tokens[p].type == TK_MINUS_F) {
@@ -502,7 +502,7 @@ static word_t eval(int p, int q, bool *success) {
         return vaddr_read(val, 4);
     }*/
     
-    if (tokens[p].type == TK_MINUS_F || tokens[p].type == TK_DEREF) {
+ /*   if (tokens[p].type == TK_MINUS_F || tokens[p].type == TK_DEREF) {
         word_t val = eval(p + 1, q, success);
         if (!*success) return 0;
         switch (tokens[p].type) {
@@ -611,4 +611,182 @@ word_t expr(char *e, bool *success) {
     word_t result = eval(0, nr_token - 1, success);
     return *success ? result : 0;
 }
+*/
 
+// ...existing code...
+
+static void recognize_minus() {
+    for (int i = 0; i < nr_token; i++) {
+        if (tokens[i].type == TK_MINUS) {
+            if (i == 0 ||
+                tokens[i-1].type == TK_PLUS ||
+                tokens[i-1].type == TK_MINUS ||
+                tokens[i-1].type == TK_MINUS_F ||
+                tokens[i-1].type == TK_MUL ||
+                tokens[i-1].type == TK_DIV ||
+                tokens[i-1].type == TK_LPAREN ||
+                tokens[i-1].type == TK_EQ ||
+                tokens[i-1].type == TK_NEQ ||
+                tokens[i-1].type == TK_AND ||
+                tokens[i-1].type == TK_OR) {
+                tokens[i].type = TK_MINUS_F;
+            }
+        }
+    }
+}
+static bool check_parentheses(int p, int q) {
+    if (tokens[p].type != TK_LPAREN || tokens[q].type != TK_RPAREN)
+        return false;
+    int count = 0;
+    for (int i = p; i <= q; i++) {
+        if (tokens[i].type == TK_LPAREN) count++;
+        else if (tokens[i].type == TK_RPAREN) {
+            count--;
+            if (count < 0) return false;
+            if (count == 0 && i != q) return false;
+        }
+    }
+    return count == 0;
+}
+static int find_operator(int p, int q) {
+    int bracket_count = 0;
+    int op_pos = -1;
+    int min_priority = 999;
+    const int priority[] = {
+        [TK_OR]     = 1,
+        [TK_AND]    = 2,
+        [TK_EQ]     = 3, [TK_NEQ] = 3,
+        [TK_LT]     = 4, [TK_LE] = 4, [TK_GT] = 4, [TK_GE] = 4,
+        [TK_PLUS]   = 5, [TK_MINUS] = 5,
+        [TK_MUL]    = 6, [TK_DIV] = 6
+    };
+    for (int i = p; i <= q; i++) {
+        if (tokens[i].type == TK_LPAREN) bracket_count++;
+        else if (tokens[i].type == TK_RPAREN) bracket_count--;
+        else if (bracket_count == 0) {
+            if (tokens[i].type >= TK_PLUS && tokens[i].type <= TK_OR) {
+                int op_priority = priority[tokens[i].type];
+                if (op_priority < min_priority) {
+                    min_priority = op_priority;
+                    op_pos = i;
+                }
+            }
+        }
+    }
+    return op_pos;
+}
+
+static word_t eval(int p, int q, bool *success) {
+    if (p > q) {
+        *success = false;
+        return 0;
+    }
+    if (tokens[p].type == TK_MINUS_F || tokens[p].type == TK_DEREF) {
+        word_t val = eval(p + 1, q, success);
+        if (!*success) return 0;
+        switch (tokens[p].type) {
+            case TK_MINUS_F: return -val;
+            case TK_DEREF:   return vaddr_read(val, 4);
+            default:         return 0;
+        }
+    }
+    if (p == q) {
+        switch (tokens[p].type) {
+            case TK_NUM:  return strtol(tokens[p].str, NULL, 10);
+            case TK_HEX:  return strtol(tokens[p].str, NULL, 16);
+            case TK_REG: {
+                bool reg_success;
+                word_t reg_val = isa_reg_str2val(tokens[p].str, &reg_success);
+                if (!reg_success) {
+                    *success = false;
+                    return 0;
+                }
+                return reg_val;
+            }
+            default:
+                *success = false;
+                return 0;
+        }
+    }
+    if (check_parentheses(p, q)) {
+        return eval(p + 1, q - 1, success);
+    }
+    int op_pos = find_operator(p, q);
+    if (op_pos == -1) {
+        *success = false;
+        return 0;
+    }
+    word_t left_val = eval(p, op_pos - 1, success);
+    if (!*success) return 0;
+    word_t right_val = eval(op_pos + 1, q, success);
+    if (!*success) return 0;
+    switch (tokens[op_pos].type) {
+        case TK_PLUS:   return left_val + right_val;
+        case TK_MINUS:  return left_val - right_val;
+        case TK_MUL:    return left_val * right_val;
+        case TK_DIV:    
+            if (right_val == 0) {
+                *success = false;
+                return 0;
+            }
+            return left_val / right_val;
+        case TK_EQ:     return left_val == right_val;
+        case TK_NEQ:    return left_val != right_val;
+        case TK_GT:     return left_val > right_val;
+        case TK_LT:     return left_val < right_val;
+        case TK_GE:     return left_val >= right_val;
+        case TK_LE:     return left_val <= right_val;
+        case TK_AND:    return left_val && right_val;
+        case TK_OR:     return left_val || right_val;
+        default:
+            *success = false;
+            return 0;
+    }
+}
+static bool make_token(char *e) {
+    int position = 0;
+    nr_token = 0;
+    while (e[position] != '\0') {
+        bool matched = false;
+        regmatch_t pmatch;
+        for (int i = 0; i < NR_REGEX; i++) {
+            if (regexec(&re[i], e + position, 1, &pmatch, 0) == 0 && pmatch.rm_so == 0) {
+                int len = pmatch.rm_eo;
+                if (rules[i].token_type == TK_NOTYPE) {
+                    position += len;
+                    matched = true;
+                    break;
+                }
+                if (nr_token >= 32) {
+                    fprintf(stderr, "错误: 超出最大token数量限制\n");
+                    return false;
+                }
+                int copy_len = len < 31 ? len : 31;
+                strncpy(tokens[nr_token].str, e + position, copy_len);
+                tokens[nr_token].str[copy_len] = '\0';
+                tokens[nr_token].type = rules[i].token_type;
+                nr_token++;
+                position += len;
+                matched = true;
+                break;
+            }
+        }
+        if (!matched) {
+            fprintf(stderr, "无法识别字符: %s\n", e + position);
+            return false;
+        }
+    }
+    return true;
+}
+
+word_t expr(char *e, bool *success) {
+    if (!make_token(e)) {
+        *success = false;
+        return 0;
+    }
+    recognize_deref();
+    recognize_minus();
+    *success = true;
+    word_t result = eval(0, nr_token - 1, success);
+    return *success ? result : 0;
+}
