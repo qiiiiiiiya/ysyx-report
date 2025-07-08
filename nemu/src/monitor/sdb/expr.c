@@ -455,7 +455,7 @@ static int find_operator(int p, int q) {
     int bracket_count = 0;
     int op_pos = -1;
     int min_priority = 999;
-    // 二元运算符优先级定义（同之前）
+    // 二元运算符优先级定义
     const int priority[] = {
         [TK_OR]     = 1,
         [TK_AND]    = 2,
@@ -477,7 +477,7 @@ static int find_operator(int p, int q) {
                 tokens[i].type == TK_MUL || tokens[i].type == TK_DIV) {
                 int op_priority = priority[tokens[i].type];
                 // 优先级相同则选择右侧运算符（左结合）
-                if (op_priority < min_priority ) { // 只要第一次碰到该优先级就记录！
+                if (op_priority < min_priority||(op_priority == min_priority && op_pos == -1) ) { 
                     min_priority = op_priority;
                     op_pos = i;
                 }
@@ -572,11 +572,11 @@ static bool make_token(char *e) {
                     matched = true;
                     break;
                 }
-                if (nr_token >= 10000) {
+                if (nr_token >= 10001) {
                     fprintf(stderr, "错误: 超出最大token数量限制\n");
                     return false;
                 }
-                int copy_len = len < 31 ? len : 31;
+                int copy_len = len < 10000 ? len : 10000;
                 strncpy(tokens[nr_token].str, e + position, copy_len);
                 tokens[nr_token].str[copy_len] = '\0';
                 tokens[nr_token].type = rules[i].token_type;
