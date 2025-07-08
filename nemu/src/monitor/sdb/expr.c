@@ -479,7 +479,7 @@ static int find_operator(int p, int q) {
     }
     return op_pos;
 }
-static /*word_t*/int eval(int p, int q, bool *success) {
+static word_t eval(int p, int q, bool *success) {
     if (p > q) {
         *success = false;
         return 0;
@@ -501,9 +501,38 @@ static /*word_t*/int eval(int p, int q, bool *success) {
         if (!*success) return 0;
         return vaddr_read(val, 4);
     }*/
-    
     if (tokens[p].type == TK_MINUS_F || tokens[p].type == TK_DEREF) {
-        /*word_t*/int val = eval(p + 1, q, success);
+    // 新增：确定一元操作的作用范围 (p+1 到 factor_end)
+    int factor_end = p + 1;  // 默认作用到下一个token
+    
+    // 情况1：下一个token是括号 -> 作用到匹配的右括号
+    if (p + 1 <= q && tokens[p + 1].type == TK_LPAREN) {
+        int count = 1;
+        factor_end = p + 2;
+        while (factor_end <= q && count > 0) {
+            if (tokens[factor_end].type == TK_LPAREN) count++;
+            else if (tokens[factor_end].type == TK_RPAREN) count--;
+            factor_end++;
+        }
+        factor_end--;  // 回退到匹配的右括号
+    }
+    // 情况2：下一个token是另一个一元操作 -> 递归作用到其结束
+    else if (p + 1 <= q && (tokens[p + 1].type == TK_MINUS_F || tokens[p + 1].type == TK_DEREF)) {
+        factor_end = q;  // 简化处理：作用到表达式结尾
+    }
+    
+    // 仅计算作用范围内的子表达式
+    word_t val = eval(p + 1, factor_end, success);
+    if (!*success) return 0;
+    
+    switch (tokens[p].type) {
+        case TK_MINUS_F: return -val;
+        case TK_DEREF: return vaddr_read(val, 4);
+        default: return 0;
+    }
+}/*
+    if (tokens[p].type == TK_MINUS_F || tokens[p].type == TK_DEREF) {
+        word_t val = eval(p + 1, q, success);
         if (!*success) return 0;
         switch (tokens[p].type) {
             case TK_MINUS_F: return -val;
@@ -511,14 +540,14 @@ static /*word_t*/int eval(int p, int q, bool *success) {
             default:         return 0;
             
         }
-    }
+    }*/
     if (p == q) {
         switch (tokens[p].type) {
             case TK_NUM:  return strtol(tokens[p].str, NULL, 10);
             case TK_HEX:  return strtol(tokens[p].str, NULL, 16);
             case TK_REG: {
                 bool reg_success;
-                /*word_t*/int reg_val = isa_reg_str2val(tokens[p].str, &reg_success);
+                word_t reg_val = isa_reg_str2val(tokens[p].str, &reg_success);
                 if (!reg_success) {
                     *success = false;
                     return 0;
@@ -538,9 +567,9 @@ static /*word_t*/int eval(int p, int q, bool *success) {
         *success = false;
         return 0;
     }
-    /*word_t*/int left_val = eval(p, op_pos - 1, success);
+    word_t left_val = eval(p, op_pos - 1, success);
     if (!*success) return 0;
-    /*word_t*/int right_val = eval(op_pos + 1, q, success);
+    word_t right_val = eval(op_pos + 1, q, success);
     if (!*success) return 0;
     switch (tokens[op_pos].type) {
         case TK_PLUS:   return left_val + right_val;
@@ -600,7 +629,7 @@ static bool make_token(char *e) {
     }
     return true;
 }
-/*word_t*/int expr(char *e, bool *success) {
+word_t expr(char *e, bool *success) {
     if (!make_token(e)) {
         *success = false;
         return 0;
@@ -608,7 +637,7 @@ static bool make_token(char *e) {
     recognize_deref();
     recognize_minus();
     *success = true;
-    /*word_t*/int result = eval(0, nr_token - 1, success);
+    word_t result = eval(0, nr_token - 1, success);
     return *success ? result : 0;
 }
 
