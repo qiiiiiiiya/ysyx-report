@@ -450,11 +450,42 @@ static bool check_parentheses(int p, int q) {
     }
     return count == 0;
 }
+// static int find_operator(int p, int q) {
+//     int bracket_count = 0;
+//     int op_pos = -1;
+//     int min_priority = 999;
+//     // 只考虑二元操作符
+//     const int priority[] = {
+//         [TK_OR]     = 1,
+//         [TK_AND]    = 2,
+//         [TK_EQ]     = 3, [TK_NEQ] = 3,
+//         [TK_LT]     = 4, [TK_LE] = 4, [TK_GT] = 4, [TK_GE] = 4,
+//         [TK_PLUS]   = 5, [TK_MINUS] = 5,
+//         [TK_MUL]    = 6, [TK_DIV] = 6
+//         [TK_DEREF] = 7, // 解引用优先级最高
+//         [TK_MINUS_F] = 7 // 一元负号优先级最高
+//     };
+//     for (int i = p; i <= q; i++) {
+//         if (tokens[i].type == TK_LPAREN) bracket_count++;
+//         else if (tokens[i].type == TK_RPAREN) bracket_count--;
+//         else if (bracket_count == 0) {
+//             // 只处理二元操作符
+//             if (tokens[i].type >= TK_PLUS && tokens[i].type <= TK_OR) {
+//                 int op_priority = priority[tokens[i].type];
+//                 if (op_priority < min_priority) {
+//                     min_priority = op_priority;
+//                     op_pos = i;
+//                 }
+//             }
+//         }
+//     }
+//     return op_pos;
+// }
 static int find_operator(int p, int q) {
     int bracket_count = 0;
     int op_pos = -1;
     int min_priority = 999;
-    // 只考虑二元操作符
+    // 二元运算符优先级定义（同之前）
     const int priority[] = {
         [TK_OR]     = 1,
         [TK_AND]    = 2,
@@ -462,17 +493,21 @@ static int find_operator(int p, int q) {
         [TK_LT]     = 4, [TK_LE] = 4, [TK_GT] = 4, [TK_GE] = 4,
         [TK_PLUS]   = 5, [TK_MINUS] = 5,
         [TK_MUL]    = 6, [TK_DIV] = 6,
-        [TK_DEREF] = 7, // 解引用优先级最高
-        [TK_MINUS_F] = 7 // 一元负号优先级最高
     };
     for (int i = p; i <= q; i++) {
         if (tokens[i].type == TK_LPAREN) bracket_count++;
         else if (tokens[i].type == TK_RPAREN) bracket_count--;
         else if (bracket_count == 0) {
-            // 只处理二元操作符
-            if (tokens[i].type >= TK_PLUS && tokens[i].type <= TK_OR) {
+            // 明确匹配所有二元运算符（排除一元运算符）
+            if (tokens[i].type == TK_OR || tokens[i].type == TK_AND ||
+                tokens[i].type == TK_EQ || tokens[i].type == TK_NEQ ||
+                tokens[i].type == TK_LT || tokens[i].type == TK_LE ||
+                tokens[i].type == TK_GT || tokens[i].type == TK_GE ||
+                tokens[i].type == TK_PLUS || tokens[i].type == TK_MINUS ||
+                tokens[i].type == TK_MUL || tokens[i].type == TK_DIV) {
                 int op_priority = priority[tokens[i].type];
-                if (op_priority < min_priority) {
+                // 优先级相同则选择右侧运算符（左结合）
+                if (op_priority <= min_priority) {
                     min_priority = op_priority;
                     op_pos = i;
                 }
@@ -481,12 +516,31 @@ static int find_operator(int p, int q) {
     }
     return op_pos;
 }
+
 static word_t eval(int p, int q, bool *success) {
     if (p > q) {
         *success = false;
         return 0;
     }
-    /*
+
+    // 处理一元运算符（负号和解引用）
+    if (tokens[p].type == TK_MINUS_F || tokens[p].type == TK_DEREF) {
+        // 递归计算一元运算符的操作数（从p+1到q的完整子表达式）
+        word_t val = eval(p + 1, q, success);
+        if (!*success) return 0;
+        switch (tokens[p].type) {
+            case TK_MINUS_F: return -val;
+            case TK_DEREF: return vaddr_read(val, 4);
+            default: return 0;
+        }
+    }
+/*
+static word_t eval(int p, int q, bool *success) {
+    if (p > q) {
+        *success = false;
+        return 0;
+    }
+    
     // 连续一元负号处理
     int minus_count = 0;
     while (p <= q && tokens[p].type == TK_MINUS_F) {
@@ -502,7 +556,7 @@ static word_t eval(int p, int q, bool *success) {
         word_t val = eval(p + 1, q, success);
         if (!*success) return 0;
         return vaddr_read(val, 4);
-    }*/
+    }
     if (tokens[p].type == TK_MINUS_F || tokens[p].type == TK_DEREF) {
     // 新增：确定一元操作的作用范围 (p+1 到 factor_end)
     int factor_end = p + 1;  // 默认作用到下一个token
@@ -532,7 +586,7 @@ static word_t eval(int p, int q, bool *success) {
         case TK_DEREF: return vaddr_read(val, 4);
         default: return 0;
     }
-}/*
+}
     if (tokens[p].type == TK_MINUS_F || tokens[p].type == TK_DEREF) {
         word_t val = eval(p + 1, q, success);
         if (!*success) return 0;
