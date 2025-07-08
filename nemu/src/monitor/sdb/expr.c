@@ -198,6 +198,63 @@ static word_t eval(int p, int q, bool *success) {
             }
             factor_end--;  // 回退到匹配的右括号
         }
+        if(p+1<=q && tokens[p + 1].type == TK_NUM) {
+            factor_end = p + 1; // 如果下一个token是数字，直接作用到它
+        }
+        if(p+1<=q && tokens[p + 1].type == TK_HEX) {
+            factor_end = p + 1; // 如果下一个token是十六进制数，直接作用到它
+        }
+        if(p+1<=q && tokens[p + 1].type == TK_REG) {
+            factor_end = p + 1; // 如果下一个token是寄存器，直接作用到它
+        }
+        if(p+1<=q && tokens[p + 1].type == TK_MINUS_F) {
+            factor_end = p + 1; // 如果下一个token是一元负号，直接作用到它
+        }
+        if(p+1<=q && tokens[p + 1].type == TK_DEREF) {
+            factor_end = p + 1; // 如果下一个token是解引用，直接作用到它
+        }
+        if(p + 1 <= q && tokens[p + 1].type == TK_LPAREN) {
+            factor_end = p + 1; // 如果下一个token是左括号，直接作用到它
+        }
+        if(p + 1 <= q && tokens[p + 1].type == TK_RPAREN) {
+            factor_end = p + 1; // 如果下一个token是右括号，直接作用到它
+        }
+        if(p + 1 <= q && tokens[p + 1].type == TK_PLUS) {
+            factor_end = p + 1; // 如果下一个token是加号，直接作用到它
+        }
+        if(p + 1 <= q && tokens[p + 1].type == TK_MINUS) {
+            factor_end = p + 1; // 如果下一个token是减号，直接作用到它
+        }
+        if(p + 1 <= q && tokens[p + 1].type == TK_MUL) {
+            factor_end = p + 1; // 如果下一个token是乘号，直接作用到它
+        }
+        if(p + 1 <= q && tokens[p + 1].type == TK_DIV) {
+            factor_end = p + 1; // 如果下一个token是除号，直接作用到它
+        }
+        if(p + 1 <= q && tokens[p + 1].type == TK_EQ) {
+            factor_end = p + 1; // 如果下一个token是等于，直接作用到它
+        }
+        if(p + 1 <= q && tokens[p + 1].type == TK_NEQ) {
+            factor_end = p + 1; // 如果下一个token是不等于      ，直接作用到它
+        }
+        if(p + 1 <= q && tokens[p + 1].type == TK_GT) {
+            factor_end = p + 1; // 如果下一个token是大于，                          
+        }
+        if(p + 1 <= q && tokens[p + 1].type == TK_LT) {
+            factor_end = p + 1; // 如果下一个token是小于，直接作用到它
+        }
+        if(p + 1 <= q && tokens[p + 1].type == TK_GE){
+            factor_end = p + 1; // 如果下一个token是大于等于，直接作用到它
+        }
+        if(p + 1 <= q && tokens[p + 1].type == TK_LE) {
+            factor_end = p + 1; // 如果下一个token是小于等于，直接作用到它
+        }
+        if(p + 1 <= q && tokens[p + 1].type == TK_AND) {
+            factor_end = p + 1; // 如果下一个token是逻辑与，直接作用到它
+        }
+        if(p + 1 <= q && tokens[p + 1].type == TK_OR){
+            factor_end = p + 1; // 如果下一个token是逻辑或，直接作用到它
+        }
         // 情况2: 下一个token是一元操作 -> 作用到表达式结尾
         else if (p + 1 <= q && (tokens[p + 1].type == TK_MINUS_F || tokens[p + 1].type == TK_DEREF)) {
             factor_end = q;
