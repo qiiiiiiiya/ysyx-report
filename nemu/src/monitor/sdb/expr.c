@@ -242,20 +242,6 @@ static word_t eval(int p, int q, bool *success) {
             default: return 0;
         }
     
-        // 应用一元操作
-        word_t result_val;
-        switch (tokens[p].type) {
-            case TK_MINUS_F: result_val = -val; break;
-            case TK_DEREF:   result_val = vaddr_read(val, 4); break;
-            default: *success = false; return 0;
-        }
-        
-        // 如果还有剩余表达式，递归计算
-        if (p + 2 <= q && tokens[p+1].type != TK_LPAREN) {
-            // 对于非括号情况，剩余表达式从 p+2 开始
-            return result_val + eval(p + 2, q, success);
-        }
-        return result_val;
     }
  
     if (p == q) {
