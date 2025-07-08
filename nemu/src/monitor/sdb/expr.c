@@ -355,7 +355,7 @@ typedef struct token {
     int type;
     char str[32];
 } Token;
-static Token tokens[1000] = {};
+static Token tokens[10000] = {};
 static int nr_token = 0;
 enum {
     TK_NOTYPE = 0,
