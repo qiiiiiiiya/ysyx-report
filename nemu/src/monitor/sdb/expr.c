@@ -445,7 +445,7 @@ static bool check_parentheses(int p, int q) {
         else if (tokens[i].type == TK_RPAREN) {
             count--;
             if (count < 0) return false;
-            if (count == 0 && i != q) return false;
+            // if (count == 0 && i != q) return false;
         }
     }
     return count == 0;
@@ -477,7 +477,7 @@ static int find_operator(int p, int q) {
                 tokens[i].type == TK_MUL || tokens[i].type == TK_DIV) {
                 int op_priority = priority[tokens[i].type];
                 // 优先级相同则选择右侧运算符（左结合）
-                if (op_priority <= min_priority) {
+                if (op_priority < min_priority ||(op_priority == min_priority && op_pos == -1)) { // 只要第一次碰到该优先级就记录！
                     min_priority = op_priority;
                     op_pos = i;
                 }
@@ -504,6 +504,7 @@ static word_t eval(int p, int q, bool *success) {
             default: return 0;
         }
     }
+
     if (p == q) {
         switch (tokens[p].type) {
             case TK_NUM:  return strtol(tokens[p].str, NULL, 10);
