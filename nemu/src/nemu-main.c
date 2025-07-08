@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
 
     if (run_test) {
         // 测试模式：执行测试用例验证expr()
-        FILE *fp = fopen("/home/yyq03/ysyx-workbench/nemu/tools/gen-expr/input", "r");
+        FILE *fp = fopen("/home/yyq03/ysyx-workbench/nemu/tools/gen-expr/build/input", "r");
         if (!fp) {
             perror("无法打开测试用例文件 input");
             return 1;
