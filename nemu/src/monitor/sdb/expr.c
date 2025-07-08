@@ -456,12 +456,12 @@ static int find_operator(int p, int q) {
     int min_priority = 999;
     // 只考虑二元操作符
     const int priority[] = {
-        [TK_OR]     = 1,
-        [TK_AND]    = 2,
-        [TK_EQ]     = 3, [TK_NEQ] = 3,
-        [TK_LT]     = 4, [TK_LE] = 4, [TK_GT] = 4, [TK_GE] = 4,
-        [TK_PLUS]   = 5, [TK_MINUS] = 5,
-        [TK_MUL]    = 6, [TK_DIV] = 6
+        [TK_OR]     = 6,
+        [TK_AND]    = 5,
+        [TK_EQ]     = 4, [TK_NEQ] = 4,
+        [TK_LT]     = 3, [TK_LE] = 3, [TK_GT] = 3, [TK_GE] = 3,
+        [TK_PLUS]   = 2, [TK_MINUS] = 2,
+        [TK_MUL]    = 1, [TK_DIV] = 1
     };
     for (int i = p; i <= q; i++) {
         if (tokens[i].type == TK_LPAREN) bracket_count++;
