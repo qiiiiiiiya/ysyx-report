@@ -189,12 +189,11 @@ static word_t eval(int p, int q, bool *success) {
 
     // 处理一元操作符 (负号和解引用)
     if (tokens[p].type == TK_MINUS_F || tokens[p].type == TK_DEREF) {
-        // 只计算紧跟在操作符后的一个原子值
         if (p + 1 > q) {
             *success = false;
             return 0;
         }
-        
+
         // 处理连续一元操作符 (如 --1)
         if (tokens[p+1].type == TK_MINUS_F || tokens[p+1].type == TK_DEREF) {
             word_t val = eval(p + 1, q, success);
@@ -205,12 +204,16 @@ static word_t eval(int p, int q, bool *success) {
                 default: return 0;
             }
         }
-        
+
         // 处理单个原子值
         word_t val;
         switch (tokens[p+1].type) {
-            case TK_NUM:  val = strtol(tokens[p+1].str, NULL, 10); break;
-            case TK_HEX:  val = strtol(tokens[p+1].str, NULL, 16); break;
+            case TK_NUM:  
+                val = strtol(tokens[p+1].str, NULL, 10);
+                break;
+            case TK_HEX:  
+                val = strtol(tokens[p+1].str, NULL, 16);
+                break;
             case TK_REG: {
                 bool reg_success;
                 val = isa_reg_str2val(tokens[p+1].str, &reg_success);
@@ -221,7 +224,6 @@ static word_t eval(int p, int q, bool *success) {
                 break;
             }
             case TK_LPAREN: {
-                // 处理括号表达式
                 if (!check_parentheses(p+1, q)) {
                     *success = false;
                     return 0;
@@ -234,7 +236,12 @@ static word_t eval(int p, int q, bool *success) {
                 *success = false;
                 return 0;
         }
-        
+        switch (tokens[p].type) {
+            case TK_MINUS_F: return -val;
+            case TK_DEREF: return vaddr_read(val, 4);
+            default: return 0;
+        }
+    
         // 应用一元操作
         word_t result_val;
         switch (tokens[p].type) {
