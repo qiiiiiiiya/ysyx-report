@@ -23,6 +23,8 @@
 #include <memory/paddr.h>
 
 extern const char *regs[];
+
+//为各种token类型添加规则，使用了一些元字符
 typedef struct token {
     int type;
     char str[32];
@@ -132,16 +134,16 @@ static int find_operator(int p, int q) {
     const int priority[] = {
         [TK_OR]     = 1,
         [TK_AND]    = 2,
-        [TK_EQ]     = 3, [TK_NEQ] = 3,
-        [TK_LT]     = 4, [TK_LE] = 4, [TK_GT] = 4, [TK_GE] = 4,
+        [TK_EQ]     = 3, [TK_NEQ]   = 3,
+        [TK_LT]     = 4, [TK_LE]    = 4, [TK_GT] = 4, [TK_GE] = 4,
         [TK_PLUS]   = 5, [TK_MINUS] = 5,
-        [TK_MUL]    = 6, [TK_DIV] = 6,
+        [TK_MUL]    = 6, [TK_DIV]   = 6,
     };
     for (int i = p; i <= q; i++) {
         if (tokens[i].type == TK_LPAREN) bracket_count++;
         else if (tokens[i].type == TK_RPAREN) bracket_count--;
         else if (bracket_count == 0) {
-            // 明确匹配所有二元运算符（排除一元运算符）
+            //匹配所有二元运算符
             if (tokens[i].type == TK_OR || tokens[i].type == TK_AND ||
                 tokens[i].type == TK_EQ || tokens[i].type == TK_NEQ ||
                 tokens[i].type == TK_LT || tokens[i].type == TK_LE ||
@@ -211,7 +213,7 @@ static word_t eval(int p, int q, bool *success) {
             default: return 0;
         }
     }
-
+    
     if (p == q) {
         switch (tokens[p].type) {
             case TK_NUM:  return strtol(tokens[p].str, NULL, 10);
