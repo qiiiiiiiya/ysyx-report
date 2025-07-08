@@ -572,11 +572,11 @@ static bool make_token(char *e) {
                     matched = true;
                     break;
                 }
-                if (nr_token >= 10001) {
+                if (nr_token >= 10000) {
                     fprintf(stderr, "错误: 超出最大token数量限制\n");
                     return false;
                 }
-                int copy_len = len < 10000 ? len : 10000;
+                int copy_len = len < 31 ? len : 31;
                 strncpy(tokens[nr_token].str, e + position, copy_len);
                 tokens[nr_token].str[copy_len] = '\0';
                 tokens[nr_token].type = rules[i].token_type;
