@@ -46,8 +46,7 @@ static void gen_num() {
     while (tmp) {
         tmp /= 10;
         len++;
-    }
-    int x = (len <= 1) ? 1 : (len - 1) * 10;
+        int x = (len <= 1) ? 1 : (len - 1) * 10;
     while (num) {
         char c = num / x + '0';
         buf[buf_pos++] = c;
