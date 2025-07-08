@@ -138,6 +138,8 @@ static int find_operator(int p, int q) {
         [TK_LT]     = 4, [TK_LE]    = 4, [TK_GT] = 4, [TK_GE] = 4,
         [TK_PLUS]   = 5, [TK_MINUS] = 5,
         [TK_MUL]    = 6, [TK_DIV]   = 6,
+        [TK_DEREF]  = 7, // 解引用操作符优先级最高
+        [TK_MINUS_F] = 7 // 一元负号优先级最高
     };
     for (int i = p; i <= q; i++) {
         if (tokens[i].type == TK_LPAREN) bracket_count++;
@@ -163,71 +165,71 @@ static int find_operator(int p, int q) {
 }
 
 
-// static word_t eval(int p, int q, bool *success) {
-//     if (p > q) {
-//         *success = false;
-//         return 0;
-//     }
-
-//     // 处理一元运算符（负号和解引用）
-//     if (tokens[p].type == TK_MINUS_F || tokens[p].type == TK_DEREF) {
-//         // 递归计算一元运算符的操作数（从p+1到q的完整子表达式）
-//         word_t val = eval(p + 1, q, success);
-//         if (!*success) return 0;
-//         switch (tokens[p].type) {
-//             case TK_MINUS_F: return -val;
-//             case TK_DEREF: return vaddr_read(val, 4);
-//             default: return 0;
-//         }
-//     }
 static word_t eval(int p, int q, bool *success) {
-    if (p > q) { /* 错误处理 */ }
+    if (p > q) {
+        *success = false;
+        return 0;
+    }
 
-    // 处理一元操作符 (TK_MINUS_F 和 TK_DEREF)
+    // 处理一元运算符（负号和解引用）
     if (tokens[p].type == TK_MINUS_F || tokens[p].type == TK_DEREF) {
-        int factor_end = p + 1;  // 默认作用到下一个token
-        
-        // 情况1: 下一个token是左括号 -> 作用到匹配的右括号
-        if (p + 1 <= q && tokens[p + 1].type == TK_LPAREN) {
-            int count = 1;
-            factor_end = p + 2;
-            while (factor_end <= q && count > 0) {
-                if (tokens[factor_end].type == TK_LPAREN) count++;
-                else if (tokens[factor_end].type == TK_RPAREN) count--;
-                factor_end++;
-            }
-            factor_end--;  // 回退到匹配的右括号
-        }
-        if(p+1<=q && tokens[p + 1].type == TK_NUM) {
-            factor_end = p + 1; // 如果下一个token是数字，直接作用到它
-        }
-        if(p + 1 <= q && tokens[p + 1].type == TK_PLUS) {
-            factor_end = p + 1; // 如果下一个token是加号，直接作用到它
-        }
-        if(p + 1 <= q && tokens[p + 1].type == TK_MINUS) {
-            factor_end = p + 1; // 如果下一个token是减号，直接作用到它
-        }
-        if(p + 1 <= q && tokens[p + 1].type == TK_MUL) {
-            factor_end = p + 1; // 如果下一个token是乘号，直接作用到它
-        }
-        if(p + 1 <= q && tokens[p + 1].type == TK_DIV) {
-            factor_end = p + 1; // 如果下一个token是除号，直接作用到它
-        }
-        // 情况2: 下一个token是一元操作 -> 作用到表达式结尾
-        else if (p + 1 <= q && (tokens[p + 1].type == TK_MINUS_F || tokens[p + 1].type == TK_DEREF)) {
-            factor_end = q;
-        }
-        
-        // 仅计算作用范围内的子表达式
-        word_t val = eval(p + 1, factor_end, success);
+        // 递归计算一元运算符的操作数（从p+1到q的完整子表达式）
+        word_t val = eval(p + 1, q, success);
         if (!*success) return 0;
-        
         switch (tokens[p].type) {
             case TK_MINUS_F: return -val;
             case TK_DEREF: return vaddr_read(val, 4);
             default: return 0;
         }
     }
+// static word_t eval(int p, int q, bool *success) {
+//     if (p > q) { /* 错误处理 */ }
+
+//     // 处理一元操作符 (TK_MINUS_F 和 TK_DEREF)
+//     if (tokens[p].type == TK_MINUS_F || tokens[p].type == TK_DEREF) {
+//         int factor_end = p + 1;  // 默认作用到下一个token
+        
+//         // 情况1: 下一个token是左括号 -> 作用到匹配的右括号
+//         if (p + 1 <= q && tokens[p + 1].type == TK_LPAREN) {
+//             int count = 1;
+//             factor_end = p + 2;
+//             while (factor_end <= q && count > 0) {
+//                 if (tokens[factor_end].type == TK_LPAREN) count++;
+//                 else if (tokens[factor_end].type == TK_RPAREN) count--;
+//                 factor_end++;
+//             }
+//             factor_end--;  // 回退到匹配的右括号
+//         }
+//         if(p+1<=q && tokens[p + 1].type == TK_NUM) {
+//             factor_end = p + 1; // 如果下一个token是数字，直接作用到它
+//         }
+//         if(p + 1 <= q && tokens[p + 1].type == TK_PLUS) {
+//             factor_end = p + 1; // 如果下一个token是加号，直接作用到它
+//         }
+//         if(p + 1 <= q && tokens[p + 1].type == TK_MINUS) {
+//             factor_end = p + 1; // 如果下一个token是减号，直接作用到它
+//         }
+//         if(p + 1 <= q && tokens[p + 1].type == TK_MUL) {
+//             factor_end = p + 1; // 如果下一个token是乘号，直接作用到它
+//         }
+//         if(p + 1 <= q && tokens[p + 1].type == TK_DIV) {
+//             factor_end = p + 1; // 如果下一个token是除号，直接作用到它
+//         }
+//         // 情况2: 下一个token是一元操作 -> 作用到表达式结尾
+//         else if (p + 1 <= q && (tokens[p + 1].type == TK_MINUS_F || tokens[p + 1].type == TK_DEREF)) {
+//             factor_end = q;
+//         }
+        
+//         // 仅计算作用范围内的子表达式
+//         word_t val = eval(p + 1, factor_end, success);
+//         if (!*success) return 0;
+        
+//         switch (tokens[p].type) {
+//             case TK_MINUS_F: return -val;
+//             case TK_DEREF: return vaddr_read(val, 4);
+//             default: return 0;
+//         }
+//     }
     
     if (p == q) {
         switch (tokens[p].type) {
@@ -250,18 +252,6 @@ static word_t eval(int p, int q, bool *success) {
                 return 0;
         }
     }
-//
-// // 计算寄存器数量（数组长度）
-// static int reg_name2idx(const char* reg_name) {
-// const int regs_num = 32;
-// const char* name = reg_name;
-// for(int i=0;i<regs_num;i++){
-//     const char* reg=regs[i];
-//     if(strcmp(name,reg)==0){
-//         return i;
-//     }
-//     }return -1;
-// }
 
 
     if (check_parentheses(p, q)) {
