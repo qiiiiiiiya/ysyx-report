@@ -165,103 +165,241 @@ static int find_operator(int p, int q) {
 }
 
 
+// static word_t eval(int p, int q, bool *success) {
+//     if (p > q) {
+//         *success = false;
+//         return 0;
+//     }
+
+//     // 处理一元运算符（负号和解引用）
+//     if (tokens[p].type == TK_MINUS_F || tokens[p].type == TK_DEREF) {
+//         // 递归计算一元运算符的操作数（从p+1到q的完整子表达式）
+//         word_t val = eval(p + 1, q, success);
+//         if (!*success) return 0;
+//         switch (tokens[p].type) {
+//             case TK_MINUS_F: return -val;
+//             case TK_DEREF: return vaddr_read(val, 4);
+//             default: return 0;
+//         }
+//     }
+
+ 
+//     if (p == q) {
+//         switch (tokens[p].type) {
+//             case TK_NUM:  return strtol(tokens[p].str, NULL, 10);
+//             case TK_HEX:  return strtol(tokens[p].str, NULL, 16);
+//             // case TK_REG: {
+//             //     const char* reg_name = tokens[p].str; // 输入的寄存器名（如"$ra"或"ra"）
+//             //     int idx = reg_name2idx(reg_name);     // 转换为索引
+//             //     if (idx == -1) { // 无效寄存器
+//             //     *success = false;
+//             //     return 0;
+//             // }
+//             //     return cpu.gpr[idx];
+//             // }
+//             case TK_MINUS_F:{
+//                 return -TK_MINUS_F;
+//             }
+//             default:
+//                 *success = false;
+//                 return 0;
+//         }
+//     }
+// //
+// // // 计算寄存器数量（数组长度）
+// // static int reg_name2idx(const char* reg_name) {
+// // const int regs_num = 32;
+// // const char* name = reg_name;
+// // for(int i=0;i<regs_num;i++){
+// //     const char* reg=regs[i];
+// //     if(strcmp(name,reg)==0){
+// //         return i;
+// //     }
+// //     }return -1;
+// // }
+
+
+//     if (check_parentheses(p, q)) {
+//         return eval(p + 1, q - 1, success);
+//     }
+//     int op_pos = find_operator(p, q);
+//     if (op_pos == -1) {
+//         *success = false;
+//         return 0;
+//     }
+//     word_t left_val = eval(p, op_pos - 1, success);
+//     if (!*success) return 0;
+//     word_t right_val = eval(op_pos + 1, q, success);
+//     if (!*success) return 0;
+//     switch (tokens[op_pos].type) {
+//         case TK_REG: {
+//                 // 使用 isa_reg_str2val API 获取寄存器值
+//                 bool reg_success;
+//                 word_t reg_val = isa_reg_str2val(tokens[p].str, &reg_success);
+//                 if (!reg_success) {
+//                     *success = false;
+//                     return 0;
+//                 }
+//                 return reg_val;
+//             }
+//         case TK_PLUS:   return left_val + right_val;
+//         case TK_MINUS:  return left_val - right_val;
+//         case TK_MUL:    return left_val * right_val;
+//         case TK_DIV:    
+//             if (right_val == 0) {
+//                 *success = false;
+//                 return 0;
+//             }
+//             return left_val / right_val;
+//         case TK_EQ:     return left_val == right_val;
+//         case TK_NEQ:    return left_val != right_val;
+//         case TK_GT:     return left_val > right_val;
+//         case TK_LT:     return left_val < right_val;
+//         case TK_GE:     return left_val >= right_val;
+//         case TK_LE:     return left_val <= right_val;
+//         case TK_AND:    return left_val && right_val;
+//         case TK_OR:     return left_val || right_val;
+//         default:
+//             *success = false;
+//             return 0;
+//     }
+// }
 static word_t eval(int p, int q, bool *success) {
     if (p > q) {
         *success = false;
         return 0;
     }
-
-    // 处理一元运算符（负号和解引用）
-    if (tokens[p].type == TK_MINUS_F || tokens[p].type == TK_DEREF) {
-        // 递归计算一元运算符的操作数（从p+1到q的完整子表达式）
-        word_t val = eval(p + 1, q, success);
-        if (!*success) return 0;
-        switch (tokens[p].type) {
-            case TK_MINUS_F: return -val;
-            case TK_DEREF: return vaddr_read(val, 4);
-            default: return 0;
-        }
-    }
-
- 
-    if (p == q) {
-        switch (tokens[p].type) {
-            case TK_NUM:  return strtol(tokens[p].str, NULL, 10);
-            case TK_HEX:  return strtol(tokens[p].str, NULL, 16);
-            // case TK_REG: {
-            //     const char* reg_name = tokens[p].str; // 输入的寄存器名（如"$ra"或"ra"）
-            //     int idx = reg_name2idx(reg_name);     // 转换为索引
-            //     if (idx == -1) { // 无效寄存器
-            //     *success = false;
-            //     return 0;
-            // }
-            //     return cpu.gpr[idx];
-            // }
-            case TK_MINUS_F:{
-                return -TK_MINUS_F;
-            }
-            default:
-                *success = false;
-                return 0;
-        }
-    }
-//
-// // 计算寄存器数量（数组长度）
-// static int reg_name2idx(const char* reg_name) {
-// const int regs_num = 32;
-// const char* name = reg_name;
-// for(int i=0;i<regs_num;i++){
-//     const char* reg=regs[i];
-//     if(strcmp(name,reg)==0){
-//         return i;
-//     }
-//     }return -1;
-// }
-
-
+    // 处理括号：若整体被括号包裹且匹配，直接计算内部
     if (check_parentheses(p, q)) {
         return eval(p + 1, q - 1, success);
     }
-    int op_pos = find_operator(p, q);
-    if (op_pos == -1) {
-        *success = false;
-        return 0;
+    // 处理一元操作符 (负号和解引用)
+    if (tokens[p].type == TK_MINUS_F || tokens[p].type == TK_DEREF) {
+        // 检查是否有足够的操作数
+        if (p + 1 > q) {
+            *success = false;
+            return 0;
+        }
+        word_t unary_result;
+        int sub_expr_end; // 一元运算符作用的子表达式结束索引
+        // 情况1：连续一元运算符（如 --1 或 *-1）
+        if (tokens[p+1].type == TK_MINUS_F || tokens[p+1].type == TK_DEREF) {
+            // 递归计算后续一元运算符组成的子表达式，其结束索引为q
+            word_t val = eval(p + 1, q, success);
+            if (!*success) return 0;
+            sub_expr_end = q; // 子表达式覆盖到q
+            switch (tokens[p].type) {
+                case TK_MINUS_F: unary_result = -val; break;
+                case TK_DEREF: unary_result = vaddr_read(val, 4); break;
+                default: *success = false; return 0;
+            }
+        }
+        // 情况2：作用于原子值（数字、寄存器、括号表达式）
+        else {
+            word_t val;
+            switch (tokens[p+1].type) {
+                case TK_NUM:  
+                    val = strtol(tokens[p+1].str, NULL, 10); 
+                    sub_expr_end = p + 1; // 子表达式结束于当前数字
+                    break;
+                case TK_HEX:  
+                    val = strtol(tokens[p+1].str, NULL, 16); 
+                    sub_expr_end = p + 1; // 子表达式结束于当前十六进制数
+                    break;
+                case TK_REG: {
+                    bool reg_success;
+                    val = isa_reg_str2val(tokens[p+1].str, &reg_success);
+                    if (!reg_success) { *success = false; return 0; }
+                    sub_expr_end = p + 1; // 子表达式结束于当前寄存器
+                    break;
+                }
+                case TK_LPAREN: {
+                    // 括号表达式需完整匹配，子表达式结束于右括号（q）
+                    if (!check_parentheses(p+1, q)) { *success = false; return 0; }
+                    val = eval(p+2, q-1, success); // 计算括号内的值
+                    if (!*success) return 0;
+                    sub_expr_end = q; // 子表达式结束于右括号
+                    break;
+                }
+                default:
+                    *success = false;
+                    return 0;
+            }
+            // 应用当前一元运算符
+            switch (tokens[p].type) {
+                case TK_MINUS_F: unary_result = -val; break;
+                case TK_DEREF: unary_result = vaddr_read(val, 4); break;
+                default: *success = false; return 0;
+            }
+        }
+        // 核心：若一元运算的子表达式未覆盖全部范围（还有后续运算符），则继续处理二元运算
+        if (sub_expr_end < q) {
+            int op_pos = find_operator(sub_expr_end + 1, q); // 查找后续二元运算符
+            if (op_pos == -1) { *success = false; return 0; }
+            // 计算右操作数（二元运算符右侧的子表达式）
+            word_t right_val = eval(op_pos + 1, q, success);
+            if (!*success) return 0;
+            // 应用二元运算符，返回最终结果
+            switch (tokens[op_pos].type) {
+                case TK_PLUS: return unary_result + right_val;
+                case TK_MINUS: return unary_result - right_val;
+                case TK_MUL: return unary_result * right_val;
+                case TK_DIV: 
+                    if (right_val == 0) { *success = false; return 0; }
+                    return unary_result / right_val;
+                case TK_EQ: return unary_result == right_val;
+                case TK_NEQ: return unary_result != right_val;
+                case TK_GT: return unary_result > right_val;
+                case TK_LT: return unary_result < right_val;
+                case TK_GE: return unary_result >= right_val;
+                case TK_LE: return unary_result <= right_val;
+                case TK_AND: return unary_result && right_val;
+                case TK_OR: return unary_result || right_val;
+                default: *success = false; return 0;
+            }
+        }
+        // 若子表达式已覆盖全部范围，直接返回一元运算结果
+        else {
+            return unary_result;
+        }
     }
+    // 处理单个原子值（非一元运算符开头的情况）
+    if (p == q) {
+        switch (tokens[p].type) {
+            case TK_NUM: return strtol(tokens[p].str, NULL, 10);
+            case TK_HEX: return strtol(tokens[p].str, NULL, 16);
+            case TK_REG: {
+                bool reg_success;
+                word_t val = isa_reg_str2val(tokens[p].str, &reg_success);
+                if (!reg_success) { *success = false; return 0; }
+                return val;
+            }
+            default: *success = false; return 0;
+        }
+    }
+    // 处理二元运算符（非一元开头的表达式）
+    int op_pos = find_operator(p, q);
+    if (op_pos == -1) { *success = false; return 0; }
     word_t left_val = eval(p, op_pos - 1, success);
     if (!*success) return 0;
     word_t right_val = eval(op_pos + 1, q, success);
     if (!*success) return 0;
     switch (tokens[op_pos].type) {
-        case TK_REG: {
-                // 使用 isa_reg_str2val API 获取寄存器值
-                bool reg_success;
-                word_t reg_val = isa_reg_str2val(tokens[p].str, &reg_success);
-                if (!reg_success) {
-                    *success = false;
-                    return 0;
-                }
-                return reg_val;
-            }
-        case TK_PLUS:   return left_val + right_val;
-        case TK_MINUS:  return left_val - right_val;
-        case TK_MUL:    return left_val * right_val;
-        case TK_DIV:    
-            if (right_val == 0) {
-                *success = false;
-                return 0;
-            }
+        case TK_PLUS: return left_val + right_val;
+        case TK_MINUS: return left_val - right_val;
+        case TK_MUL: return left_val * right_val;
+        case TK_DIV: 
+            if (right_val == 0) { *success = false; return 0; }
             return left_val / right_val;
-        case TK_EQ:     return left_val == right_val;
-        case TK_NEQ:    return left_val != right_val;
-        case TK_GT:     return left_val > right_val;
-        case TK_LT:     return left_val < right_val;
-        case TK_GE:     return left_val >= right_val;
-        case TK_LE:     return left_val <= right_val;
-        case TK_AND:    return left_val && right_val;
-        case TK_OR:     return left_val || right_val;
-        default:
-            *success = false;
-            return 0;
+        case TK_EQ: return left_val == right_val;
+        case TK_NEQ: return left_val != right_val;
+        case TK_GT: return left_val > right_val;
+        case TK_LT: return left_val < right_val;
+        case TK_GE: return left_val >= right_val;
+        case TK_LE: return left_val <= right_val;
+        case TK_AND: return left_val && right_val;
+        case TK_OR: return left_val || right_val;
+        default: *success = false; return 0;
     }
 }
 static bool make_token(char *e) {
