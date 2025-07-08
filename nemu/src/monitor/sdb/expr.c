@@ -476,8 +476,8 @@ static int find_operator(int p, int q) {
                 tokens[i].type == TK_PLUS || tokens[i].type == TK_MINUS ||
                 tokens[i].type == TK_MUL || tokens[i].type == TK_DIV) {
                 int op_priority = priority[tokens[i].type];
-                // 优先级相同则选择右侧运算符（左结合）
-                if (op_priority < min_priority||(op_priority == min_priority && op_pos == -1) ) { 
+                // 优先级相同则选择左侧运算符（左结合）
+                if (op_priority < min_priority){ 
                     min_priority = op_priority;
                     op_pos = i;
                 }
