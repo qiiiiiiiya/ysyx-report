@@ -479,7 +479,7 @@ static int find_operator(int p, int q) {
     }
     return op_pos;
 }
-static word_t eval(int p, int q, bool *success) {
+static /*word_t*/int eval(int p, int q, bool *success) {
     if (p > q) {
         *success = false;
         return 0;
@@ -503,7 +503,7 @@ static word_t eval(int p, int q, bool *success) {
     }*/
     
     if (tokens[p].type == TK_MINUS_F || tokens[p].type == TK_DEREF) {
-        word_t val = eval(p + 1, q, success);
+        /*word_t*/int val = eval(p + 1, q, success);
         if (!*success) return 0;
         switch (tokens[p].type) {
             case TK_MINUS_F: return -val;
@@ -518,7 +518,7 @@ static word_t eval(int p, int q, bool *success) {
             case TK_HEX:  return strtol(tokens[p].str, NULL, 16);
             case TK_REG: {
                 bool reg_success;
-                word_t reg_val = isa_reg_str2val(tokens[p].str, &reg_success);
+                /*word_t*/int reg_val = isa_reg_str2val(tokens[p].str, &reg_success);
                 if (!reg_success) {
                     *success = false;
                     return 0;
@@ -538,9 +538,9 @@ static word_t eval(int p, int q, bool *success) {
         *success = false;
         return 0;
     }
-    word_t left_val = eval(p, op_pos - 1, success);
+    /*word_t*/int left_val = eval(p, op_pos - 1, success);
     if (!*success) return 0;
-    word_t right_val = eval(op_pos + 1, q, success);
+    /*word_t*/int right_val = eval(op_pos + 1, q, success);
     if (!*success) return 0;
     switch (tokens[op_pos].type) {
         case TK_PLUS:   return left_val + right_val;
@@ -600,7 +600,7 @@ static bool make_token(char *e) {
     }
     return true;
 }
-word_t expr(char *e, bool *success) {
+/*word_t*/int expr(char *e, bool *success) {
     if (!make_token(e)) {
         *success = false;
         return 0;
@@ -608,7 +608,7 @@ word_t expr(char *e, bool *success) {
     recognize_deref();
     recognize_minus();
     *success = true;
-    word_t result = eval(0, nr_token - 1, success);
+    /*word_t*/int result = eval(0, nr_token - 1, success);
     return *success ? result : 0;
 }
 
