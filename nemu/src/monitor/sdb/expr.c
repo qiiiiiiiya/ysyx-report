@@ -445,7 +445,7 @@ static bool check_parentheses(int p, int q) {
         else if (tokens[i].type == TK_RPAREN) {
             count--;
             if (count < 0) return false;
-            // if (count == 0 && i != q) return false;
+            if (count == 0 && i != q) return false;
         }
     }
     return count == 0;
