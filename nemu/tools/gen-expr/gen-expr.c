@@ -141,10 +141,10 @@ int main(int argc, char *argv[]) {
         assert(fp != NULL);
 
         int result;
-        ret = fscanf(fp, "%d", &result);
+        ret = fscanf(fp, "%u", &result);
         pclose(fp);
 
-        printf("%d %s\n", result, buf); // 输出%d
+        printf("%u %s\n", result, buf); // 输出%d
     }
     return 0;
 }
