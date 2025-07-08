@@ -151,7 +151,8 @@ static int find_operator(int p, int q) {
                 tokens[i].type == TK_LT || tokens[i].type == TK_LE ||
                 tokens[i].type == TK_GT || tokens[i].type == TK_GE ||
                 tokens[i].type == TK_PLUS || tokens[i].type == TK_MINUS ||
-                tokens[i].type == TK_MUL || tokens[i].type == TK_DIV) {
+                tokens[i].type == TK_MUL || tokens[i].type == TK_DIV|| tokens[i].type == TK_DEREF ||
+                tokens[i].type == TK_MINUS_F) {
                 int op_priority = priority[tokens[i].type];
                 // 优先级相同则选择右侧运算符（左结合）
                 if (op_priority <= min_priority) { 
