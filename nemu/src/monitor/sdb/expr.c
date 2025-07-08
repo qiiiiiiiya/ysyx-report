@@ -579,7 +579,7 @@ static bool make_token(char *e) {
                     matched = true;
                     break;
                 }
-                if (nr_token >= 32) {
+                if (nr_token >= 10000) {
                     fprintf(stderr, "错误: 超出最大token数量限制\n");
                     return false;
                 }
