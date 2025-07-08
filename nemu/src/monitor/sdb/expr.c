@@ -189,30 +189,51 @@ static word_t eval(int p, int q, bool *success) {
 
     // 处理一元操作符 (负号和解引用)
     if (tokens[p].type == TK_MINUS_F || tokens[p].type == TK_DEREF) {
-        // 确定一元操作的作用范围 (p+1 到 factor_end)
-        int factor_end = p + 1;
+        // 只计算紧跟在操作符后的一个原子值
+        if (p + 1 > q) {
+            *success = false;
+            return 0;
+        }
         
-        // 情况1: 后面是左括号 -> 匹配到右括号
-        if (factor_end <= q && tokens[factor_end].type == TK_LPAREN) {
-            int count = 1;
-            factor_end = p + 2;
-            while (factor_end <= q && count > 0) {
-                if (tokens[factor_end].type == TK_LPAREN) count++;
-                else if (tokens[factor_end].type == TK_RPAREN) count--;
-                factor_end++;
+        // 处理连续一元操作符 (如 --1)
+        if (tokens[p+1].type == TK_MINUS_F || tokens[p+1].type == TK_DEREF) {
+            word_t val = eval(p + 1, q, success);
+            if (!*success) return 0;
+            switch (tokens[p].type) {
+                case TK_MINUS_F: return -val;
+                case TK_DEREF: return vaddr_read(val, 4);
+                default: return 0;
             }
-            factor_end--;  // 指向匹配的右括号
         }
-        // 情况2: 后面是另一个一元操作 -> 作用到表达式结尾
-        else if (factor_end <= q && 
-                (tokens[factor_end].type == TK_MINUS_F || tokens[factor_end].type == TK_DEREF)) {
-            factor_end = q;
-        }
-        // 情况3: 后面是单个因子 -> 只作用到下一个token
         
-        // 递归计算因子值
-        word_t val = eval(p + 1, factor_end, success);
-        if (!*success) return 0;
+        // 处理单个原子值
+        word_t val;
+        switch (tokens[p+1].type) {
+            case TK_NUM:  val = strtol(tokens[p+1].str, NULL, 10); break;
+            case TK_HEX:  val = strtol(tokens[p+1].str, NULL, 16); break;
+            case TK_REG: {
+                bool reg_success;
+                val = isa_reg_str2val(tokens[p+1].str, &reg_success);
+                if (!reg_success) {
+                    *success = false;
+                    return 0;
+                }
+                break;
+            }
+            case TK_LPAREN: {
+                // 处理括号表达式
+                if (!check_parentheses(p+1, q)) {
+                    *success = false;
+                    return 0;
+                }
+                val = eval(p+2, q-1, success);
+                if (!*success) return 0;
+                break;
+            }
+            default:
+                *success = false;
+                return 0;
+        }
         
         // 应用一元操作
         word_t result_val;
@@ -222,10 +243,11 @@ static word_t eval(int p, int q, bool *success) {
             default: *success = false; return 0;
         }
         
-        // 如果后面还有表达式，递归计算"结果 + 剩余表达式"
-        if (factor_end < q) {
-            return result_val + eval(factor_end + 1, q, success);
-        } 
+        // 如果还有剩余表达式，递归计算
+        if (p + 2 <= q && tokens[p+1].type != TK_LPAREN) {
+            // 对于非括号情况，剩余表达式从 p+2 开始
+            return result_val + eval(p + 2, q, success);
+        }
         return result_val;
     }
  
