@@ -254,22 +254,22 @@
 //                 return strtol(tokens[p].str, NULL, 10);
 //             case TK_HEX:  // 十六进制数（0x开头）
 //                 return strtol(tokens[p].str, NULL, 16);
-//             case TK_REG: {
-//                 const char* reg_name = tokens[p].str; // 输入的寄存器名（如"$ra"或"ra"）
-//                 int idx = reg_name2idx(reg_name);     // 转换为索引
-//                 if (idx == -1) { // 无效寄存器
-//                 *success = false;
-//                 return 0;
-//             }
-//                 return cpu.gpr[idx];
-//             }
-//             case TK_MINUS_F:{
-//                 return -TK_MINUS_F;
-//             }
-//             default:
-//                 *success = false;
-//                 return 0;
-//         }
+        //     case TK_REG: {
+        //         const char* reg_name = tokens[p].str; // 输入的寄存器名（如"$ra"或"ra"）
+        //         int idx = reg_name2idx(reg_name);     // 转换为索引
+        //         if (idx == -1) { // 无效寄存器
+        //         *success = false;
+        //         return 0;
+        //     }
+        //         return cpu.gpr[idx];
+        //     }
+        //     case TK_MINUS_F:{
+        //         return -TK_MINUS_F;
+        //     }
+        //     default:
+        //         *success = false;
+        //         return 0;
+        // }
 //     }
 
 //     if (check_parentheses(p, q)) {  // 处理括号
@@ -351,6 +351,8 @@
 #include <regex.h>
 #include <memory/vaddr.h>
 #include <memory/paddr.h>
+
+extern const char *regs[];
 typedef struct token {
     int type;
     char str[32];
@@ -436,6 +438,7 @@ static void recognize_minus() {
         }
     }
 }
+
 static bool check_parentheses(int p, int q) {
     if (tokens[p].type != TK_LPAREN || tokens[q].type != TK_RPAREN)
         return false;
@@ -486,7 +489,8 @@ static int find_operator(int p, int q) {
     }
     return op_pos;
 }
-static word_t eval_factor(int p, int q, bool *success) {
+
+static word_t eval(int p, int q, bool *success) {
     if (p > q) {
         *success = false;
         return 0;
@@ -494,7 +498,8 @@ static word_t eval_factor(int p, int q, bool *success) {
 
     // 处理一元运算符（负号和解引用）
     if (tokens[p].type == TK_MINUS_F || tokens[p].type == TK_DEREF) {
-        word_t val = eval_factor(p + 1, q, success); // 操作数为因子
+        // 递归计算一元运算符的操作数（从p+1到q的完整子表达式）
+        word_t val = eval(p + 1, q, success);
         if (!*success) return 0;
         switch (tokens[p].type) {
             case TK_MINUS_F: return -val;
@@ -503,17 +508,56 @@ static word_t eval_factor(int p, int q, bool *success) {
         }
     }
 
-    // 处理括号内的因子
-    if (check_parentheses(p, q)) {
-        return eval_factor(p + 1, q - 1, success);
-    }
-
-    // 处理原子（数字、寄存器等）
     if (p == q) {
         switch (tokens[p].type) {
             case TK_NUM:  return strtol(tokens[p].str, NULL, 10);
             case TK_HEX:  return strtol(tokens[p].str, NULL, 16);
-            case TK_REG: {
+            // case TK_REG: {
+            //     const char* reg_name = tokens[p].str; // 输入的寄存器名（如"$ra"或"ra"）
+            //     int idx = reg_name2idx(reg_name);     // 转换为索引
+            //     if (idx == -1) { // 无效寄存器
+            //     *success = false;
+            //     return 0;
+            // }
+            //     return cpu.gpr[idx];
+            // }
+            case TK_MINUS_F:{
+                return -TK_MINUS_F;
+            }
+            default:
+                *success = false;
+                return 0;
+        }
+    }
+//
+// // 计算寄存器数量（数组长度）
+// static int reg_name2idx(const char* reg_name) {
+// const int regs_num = 32;
+// const char* name = reg_name;
+// for(int i=0;i<regs_num;i++){
+//     const char* reg=regs[i];
+//     if(strcmp(name,reg)==0){
+//         return i;
+//     }
+//     }return -1;
+// }
+
+
+    if (check_parentheses(p, q)) {
+        return eval(p + 1, q - 1, success);
+    }
+    int op_pos = find_operator(p, q);
+    if (op_pos == -1) {
+        *success = false;
+        return 0;
+    }
+    word_t left_val = eval(p, op_pos - 1, success);
+    if (!*success) return 0;
+    word_t right_val = eval(op_pos + 1, q, success);
+    if (!*success) return 0;
+    switch (tokens[op_pos].type) {
+        case TK_REG: {
+                // 使用 isa_reg_str2val API 获取寄存器值
                 bool reg_success;
                 word_t reg_val = isa_reg_str2val(tokens[p].str, &reg_success);
                 if (!reg_success) {
@@ -522,39 +566,6 @@ static word_t eval_factor(int p, int q, bool *success) {
                 }
                 return reg_val;
             }
-            default:
-                *success = false;
-                return 0;
-        }
-    }
-
-    // 因子中不应包含二元运算符，否则为无效表达式
-    *success = false;
-    return 0;
-}
-static word_t eval(int p, int q, bool *success) {
-    if (p > q) {
-        *success = false;
-        return 0;
-    }
-
-    // 先处理左侧因子（含一元运算符）
-    word_t left_val = eval_factor(p, q, success);
-    if (!*success) return 0;
-
-    // 寻找二元运算符（处理剩余表达式）
-    int op_pos = find_operator(p, q);
-    if (op_pos == -1) {
-        // 无二元运算符，直接返回因子结果
-        return left_val;
-    }
-
-    // 计算右侧表达式
-    word_t right_val = eval(op_pos + 1, q, success);
-    if (!*success) return 0;
-
-    // 应用二元运算符
-    switch (tokens[op_pos].type) {
         case TK_PLUS:   return left_val + right_val;
         case TK_MINUS:  return left_val - right_val;
         case TK_MUL:    return left_val * right_val;
@@ -577,77 +588,6 @@ static word_t eval(int p, int q, bool *success) {
             return 0;
     }
 }
-// static word_t eval(int p, int q, bool *success) {
-//     if (p > q) {
-//         *success = false;
-//         return 0;
-//     }
-
-//     // 处理一元运算符（负号和解引用）
-//     if (tokens[p].type == TK_MINUS_F || tokens[p].type == TK_DEREF) {
-//         // 递归计算一元运算符的操作数（从p+1到q的完整子表达式）
-//         word_t val = eval(p + 1, q, success);
-//         if (!*success) return 0;
-//         switch (tokens[p].type) {
-//             case TK_MINUS_F: return -val;
-//             case TK_DEREF: return vaddr_read(val, 4);
-//             default: return 0;
-//         }
-//     }
-
-//     if (p == q) {
-//         switch (tokens[p].type) {
-//             case TK_NUM:  return strtol(tokens[p].str, NULL, 10);
-//             case TK_HEX:  return strtol(tokens[p].str, NULL, 16);
-//             case TK_REG: {
-//                 bool reg_success;
-//                 word_t reg_val = isa_reg_str2val(tokens[p].str, &reg_success);
-//                 if (!reg_success) {
-//                     *success = false;
-//                     return 0;
-//                 }
-//                 return reg_val;
-//             }
-//             default:
-//                 *success = false;
-//                 return 0;
-//         }
-//     }
-//     if (check_parentheses(p, q)) {
-//         return eval(p + 1, q - 1, success);
-//     }
-//     int op_pos = find_operator(p, q);
-//     if (op_pos == -1) {
-//         *success = false;
-//         return 0;
-//     }
-//     word_t left_val = eval(p, op_pos - 1, success);
-//     if (!*success) return 0;
-//     word_t right_val = eval(op_pos + 1, q, success);
-//     if (!*success) return 0;
-//     switch (tokens[op_pos].type) {
-//         case TK_PLUS:   return left_val + right_val;
-//         case TK_MINUS:  return left_val - right_val;
-//         case TK_MUL:    return left_val * right_val;
-//         case TK_DIV:    
-//             if (right_val == 0) {
-//                 *success = false;
-//                 return 0;
-//             }
-//             return left_val / right_val;
-//         case TK_EQ:     return left_val == right_val;
-//         case TK_NEQ:    return left_val != right_val;
-//         case TK_GT:     return left_val > right_val;
-//         case TK_LT:     return left_val < right_val;
-//         case TK_GE:     return left_val >= right_val;
-//         case TK_LE:     return left_val <= right_val;
-//         case TK_AND:    return left_val && right_val;
-//         case TK_OR:     return left_val || right_val;
-//         default:
-//             *success = false;
-//             return 0;
-//     }
-// }
 static bool make_token(char *e) {
     int position = 0;
     nr_token = 0;
