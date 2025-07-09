@@ -536,24 +536,6 @@ static word_t eval(int p, int q, bool *success) {
         return eval(p + 1, q - 1, success);
     }
     
-    // 处理一元运算符（负号和解引用）
-    if (tokens[p].type == TK_MINUS_F || tokens[p].type == TK_DEREF) {
-        if (p + 1 > q) {
-            *success = false;
-            return 0;
-        }
-        
-        // 递归计算后续表达式
-        word_t val = eval(p + 1, q, success);
-        if (!*success) return 0;
-        
-        switch (tokens[p].type) {
-            case TK_MINUS_F: return -val;
-            case TK_DEREF: return vaddr_read(val, 4);
-            default: *success = false; return 0;
-        }
-    }
-    
     // 处理单个原子值
     if (p == q) {
         switch (tokens[p].type) {
@@ -569,33 +551,56 @@ static word_t eval(int p, int q, bool *success) {
         }
     }
     
-    // 处理二元运算符
+    // 首先寻找二元运算符
     int op_pos = find_operator(p, q);
-    if (op_pos == -1) { *success = false; return 0; }
-    
-    word_t left_val = eval(p, op_pos - 1, success);
-    if (!*success) return 0;
-    
-    word_t right_val = eval(op_pos + 1, q, success);
-    if (!*success) return 0;
-    
-    switch (tokens[op_pos].type) {
-        case TK_PLUS: return left_val + right_val;
-        case TK_MINUS: return left_val - right_val;
-        case TK_MUL: return left_val * right_val;
-        case TK_DIV:
-            if (right_val == 0) { *success = false; return 0; }
-            return left_val / right_val;
-        case TK_EQ: return left_val == right_val;
-        case TK_NEQ: return left_val != right_val;
-        case TK_GT: return left_val > right_val;
-        case TK_LT: return left_val < right_val;
-        case TK_GE: return left_val >= right_val;
-        case TK_LE: return left_val <= right_val;
-        case TK_AND: return left_val && right_val;
-        case TK_OR: return left_val || right_val;
-        default: *success = false; return 0;
+    if (op_pos != -1) {
+        // 找到二元运算符，正常处理
+        word_t left_val = eval(p, op_pos - 1, success);
+        if (!*success) return 0;
+        
+        word_t right_val = eval(op_pos + 1, q, success);
+        if (!*success) return 0;
+        
+        switch (tokens[op_pos].type) {
+            case TK_PLUS: return left_val + right_val;
+            case TK_MINUS: return left_val - right_val;
+            case TK_MUL: return left_val * right_val;
+            case TK_DIV:
+                if (right_val == 0) { *success = false; return 0; }
+                return left_val / right_val;
+            case TK_EQ: return left_val == right_val;
+            case TK_NEQ: return left_val != right_val;
+            case TK_GT: return left_val > right_val;
+            case TK_LT: return left_val < right_val;
+            case TK_GE: return left_val >= right_val;
+            case TK_LE: return left_val <= right_val;
+            case TK_AND: return left_val && right_val;
+            case TK_OR: return left_val || right_val;
+            default: *success = false; return 0;
+        }
     }
+    
+    // 没有找到二元运算符，处理一元运算符
+    if (tokens[p].type == TK_MINUS_F || tokens[p].type == TK_DEREF) {
+        if (p + 1 > q) {
+            *success = false;
+            return 0;
+        }
+        
+        // 递归计算后续表达式
+        word_t val = eval(p + 1, q, success);
+        if (!*success) return 0;
+        
+        switch (tokens[p].type) {
+            case TK_MINUS_F: return (~val) + 1;  // 二进制补码取负
+            case TK_DEREF: return vaddr_read(val, 4);
+            default: *success = false; return 0;
+        }
+    }
+    
+    // 如果到这里，表达式格式错误
+    *success = false;
+    return 0;
 }
 
 static bool make_token(char *e) {
