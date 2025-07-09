@@ -12,7 +12,6 @@
 *
 * See the Mulan PSL v2 for more details.
 ***************************************************************************************/
-
 #include <isa.h>
 
 /* We use the POSIX regex functions to process regular expressions.
@@ -125,7 +124,6 @@ static bool check_parentheses(int p, int q) {
     }
     return count == 0;
 }
-
 
 static int find_operator(int p, int q) {
     int bracket_count = 0;
@@ -304,9 +302,7 @@ static word_t eval(int p, int q, bool *success) {
         default: *success = false; return 0;
     }
 }
-
-
-
+
 static bool make_token(char *e) {
     int position = 0;
     nr_token = 0;
@@ -343,7 +339,6 @@ static bool make_token(char *e) {
     return true;
 }
 
-
 word_t expr(char *e, bool *success) {
     if (!make_token(e)) {
         *success = false;
@@ -355,4 +350,3 @@ word_t expr(char *e, bool *success) {
     word_t result = eval(0, nr_token - 1, success);
     return *success ? result : 0;
 }
-
