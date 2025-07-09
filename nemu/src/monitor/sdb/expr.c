@@ -525,7 +525,7 @@ static int find_operator(int p, int q) {
     return op_pos;
 }
 
-static word_t eval(int p, int q, bool *success) {
+static /*word_t*/int64_t eval(int p, int q, bool *success) {
     if (p > q) {
         *success = false;
         return 0;
@@ -545,7 +545,7 @@ static word_t eval(int p, int q, bool *success) {
                 bool reg_success;
                 word_t val = isa_reg_str2val(tokens[p].str, &reg_success);
                 if (!reg_success) { *success = false; return 0; }
-                return val;
+                return (int64_t)(int32_t)val;
             }
             default: *success = false; return 0;
         }
@@ -555,10 +555,10 @@ static word_t eval(int p, int q, bool *success) {
     int op_pos = find_operator(p, q);
     if (op_pos != -1) {
         // 找到二元运算符，正常处理
-        word_t left_val = eval(p, op_pos - 1, success);
+        /*word_t*/int64_t left_val = eval(p, op_pos - 1, success);
         if (!*success) return 0;
         
-        word_t right_val = eval(op_pos + 1, q, success);
+        /*word_t*/int64_t right_val = eval(op_pos + 1, q, success);
         if (!*success) return 0;
         
         switch (tokens[op_pos].type) {
@@ -588,12 +588,12 @@ static word_t eval(int p, int q, bool *success) {
         }
         
         // 递归计算后续表达式
-        word_t val = eval(p + 1, q, success);
+        /*word_t*/int64_t val = eval(p + 1, q, success);
         if (!*success) return 0;
         
         switch (tokens[p].type) {
-            case TK_MINUS_F: return (word_t)(-(int64_t)val);  // 二进制补码取负
-            case TK_DEREF: return vaddr_read(val, 4);
+            case TK_MINUS_F: return /*((~val) + 1*/-val;  // 二进制补码取负
+            case TK_DEREF: return (int64_t)(int32_t)vaddr_read((vaddr_t)val, 4);
             default: *success = false; return 0;
         }
     }
@@ -657,6 +657,7 @@ word_t expr(char *e, bool *success) {
     recognize_minus();
     
     *success = true;
-    word_t result = eval(0, nr_token - 1, success);
-    return *success ? result : 0;
+    /*word_t*/int64_t result = eval(0, nr_token - 1, success);
+    // return *success ? result : 0;
+    return (word_t)(uint32_t)result;
 }
