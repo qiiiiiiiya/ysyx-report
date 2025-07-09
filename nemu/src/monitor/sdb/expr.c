@@ -592,7 +592,7 @@ static word_t eval(int p, int q, bool *success) {
         if (!*success) return 0;
         
         switch (tokens[p].type) {
-            case TK_MINUS_F: return (~val) + 1;  // 二进制补码取负
+            case TK_MINUS_F: return (word_t)(-(int64_t)val);  // 二进制补码取负
             case TK_DEREF: return vaddr_read(val, 4);
             default: *success = false; return 0;
         }
