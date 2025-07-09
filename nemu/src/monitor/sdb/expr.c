@@ -233,38 +233,7 @@ static word_t eval(int p, int q, bool *success) {
                 default: *success = false; return 0;
             }
         }
-        // 核心：若一元运算的子表达式未覆盖全部范围（还有后续运算符），则继续处理二元运算
-    //     if (sub_expr_end < q) {
-    //         int op_pos = find_operator(sub_expr_end + 1, q); // 查找后续二元运算符
-    //         if (op_pos == -1) { *success = false; return 0; }
-    //         // 计算右操作数（二元运算符右侧的子表达式）
-    //         word_t right_val = eval(op_pos + 1, q, success);
-    //         if (!*success) return 0;
-    //         // 应用二元运算符，返回最终结果
-    //         switch (tokens[op_pos].type) {
-    //             case TK_PLUS: return unary_result + right_val;
-    //             case TK_MINUS: return unary_result - right_val;
-    //             case TK_MUL: return unary_result * right_val;
-    //             case TK_DIV: 
-    //                 if (right_val == 0) { *success = false; return 0; }
-    //                 return unary_result / right_val;
-    //             case TK_EQ: return unary_result == right_val;
-    //             case TK_NEQ: return unary_result != right_val;
-    //             case TK_GT: return unary_result > right_val;
-    //             case TK_LT: return unary_result < right_val;
-    //             case TK_GE: return unary_result >= right_val;
-    //             case TK_LE: return unary_result <= right_val;
-    //             case TK_AND: return unary_result && right_val;
-    //             case TK_OR: return unary_result || right_val;
-    //             default: *success = false; return 0;
-    //         }
-    //     }
-    //     // 若子表达式已覆盖全部范围，直接返回一元运算结果
-    //     else {
-    //         return unary_result;
-    //     }
-    // }
-    // 核心：若一元运算的子表达式未覆盖全部范围（还有后续运算符），则继续处理二元运算
+       // 核心：若一元运算的子表达式未覆盖全部范围（还有后续运算符），则继续处理二元运算
         if (sub_expr_end < q) {
             int op_pos = find_operator(sub_expr_end + 1, q); // 查找后续二元运算符
             if (op_pos == -1) { *success = false; return 0; }
@@ -295,6 +264,7 @@ static word_t eval(int p, int q, bool *success) {
             return unary_result;
         }
     }
+    
     // 处理单个原子值（非一元运算符开头的情况）
     if (p == q) {
         switch (tokens[p].type) {
