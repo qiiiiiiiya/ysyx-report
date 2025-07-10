@@ -68,9 +68,8 @@ static char gen_rand_op() {
 }
 //65530
 static void gen_rand_expr() {
-    if (buf_pos > 100) {
+    if (buf_pos > 1000) {
         gen('$');
-        printf("oversize\n");
         return;
     }
     switch (choose(3)) {
