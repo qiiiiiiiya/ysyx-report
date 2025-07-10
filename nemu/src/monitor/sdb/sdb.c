@@ -154,17 +154,30 @@ printf("Unknown input,please try it in a standard format");
     }
     int n=strtol(arg1,NULL,10);
     vaddr_t base_addr=strtol(arg2,NULL,16);
-    for(int i=0;i<n;)
-    {
-        printf("0x%08x:",base_addr);
+    // for(int i=0;i<n;)
+    // {
+    //     printf("0x%08x:",base_addr);
      
-        for(int j=0;i<n&&j<4;i++,j++)
-        {
-            word_t data=vaddr_read(base_addr,4);
-            printf("0x%08x\t",data);
-            base_addr+=4;
+    //     for(int j=0;i<n&&j<4;i++,j++)
+    //     {
+    //         word_t data=vaddr_read(base_addr,4);
+    //         printf("0x%08x\t",data);
+    //         base_addr+=4;
+    //     }
+    //     printf("\n");
+    // }
+
+    for(int i=0;i<n;i++){
+        if(i%4==0) {
+            printf("0x%08x:",base_addr);
         }
-        printf("\n");
+        word_t data=vaddr_read(base_addr,4);
+        printf("0x%08x\t",data);
+        base_addr+=4;
+        if((i+1)%4==0) {
+            printf("\n");
+        }
+      
     }
     return 0;
 }
