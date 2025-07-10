@@ -239,7 +239,7 @@ static int cmd_p(char *args) {
 
   if (success) {
     // 输出结果（以十六进制和十进制两种形式）
-    printf("0x%x (%u)\n", (unsigned)result, (unsigned)result);
+    printf("08x%x (%u)\n", (unsigned)result, (unsigned)result);
   } else {
     printf("Failed to evaluate expression: %s\n", args);
   }
