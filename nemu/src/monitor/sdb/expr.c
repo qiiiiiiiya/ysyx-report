@@ -47,7 +47,7 @@ static struct rule {
     int token_type;
 } rules[] = {
     {"0x[0-9a-fA-F]+", TK_HEX},          // 十六进制数
-    {"\\$?([a-z][a-z0-9]{0,2}|[0-9]+)", TK_REG},  // 寄存器匹配规则（带或不带$）
+    {"\\$?[a-z][a-z0-9]{0,2}", TK_REG},  // 寄存器匹配规则（带或不带$）
     {" +", TK_NOTYPE},                    // 空格
     {"\\(", TK_LPAREN},                   // 左括号
     {"\\)", TK_RPAREN},                   // 右括号
@@ -186,24 +186,6 @@ static int find_operator(int p, int q) {
     
     return op_pos;
 }
-
-// // 定义寄存器值的存储数组（与regs[]顺序对应）
-// extern const char *regs[];
-// // 实现寄存器名到值的映射
-// word_t isa_reg_str2val(const char *s, bool *success) {
-//     *success = false;  // 默认为失败
-
-//     // 遍历regs[]数组，查找匹配的寄存器名
-//     for (int i = 0; i < 32; i++) {
-//         if (strcmp(s, regs[i]) == 0) {  // 字符串匹配成功
-//             *success = true;
-//             return cpu.gpr[i];  // 返回对应寄存器的值
-//         }
-//     }
-
-//     // 若未找到匹配，success保持false
-//     return 0;
-// }
 
 static /*word_t*/int64_t eval(int p, int q, bool *success) {
     if (p > q) {
