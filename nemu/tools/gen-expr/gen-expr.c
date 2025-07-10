@@ -197,6 +197,7 @@ static char gen_rand_op() {
 
 static void gen_rand_expr() {
     if (buf_pos > 65530) {
+        gen('$');
         printf("oversize\n");
         return;
     }
