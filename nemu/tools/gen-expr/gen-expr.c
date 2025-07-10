@@ -25,9 +25,10 @@ static size_t buf_pos = 0;
 static char code_buf[65536 + 128] = {};
 static char *code_format =
 "#include <stdio.h>\n"
+"#include <stdint.h>\n"
 "int main() { "
-"  int result = %s; "
-"  printf(\"%%d\", result); "
+"  int result = /*(uint32_t)*/(%s); "
+"  printf(\"%%u\", result); "
 "  return 0; "
 "}";
 
@@ -59,36 +60,16 @@ static void gen_num() {
     }
 }
 
-// 生成非零数字（用于除法右侧）
-static void gen_num_non_zero() {
-    int num;
-    do {
-        num = rand() % 100;
-    } while (num == 0);
-    int len = 0, tmp = num;
-    while (tmp) {
-        tmp /= 10;
-        len++;
-    }
-    int x = (len <= 1) ? 1 : (len - 1) * 10;
-    while (num) {
-        char c = num / x + '0';
-        buf[buf_pos++] = c;
-        num %= x;
-        x /= 10;
-    }
-}
-
 static char gen_rand_op() {
     char op[4] = {'+', '-', '*', '/'};
     int pos = rand() % 4;
     buf[buf_pos++] = op[pos];
     return op[pos];
 }
-
+//65530
 static void gen_rand_expr() {
-    if (buf_pos > 65530) {
-        printf("oversize\n");
+    if (buf_pos > 1000) {
+        gen('$');
         return;
     }
     switch (choose(3)) {
@@ -102,14 +83,10 @@ static void gen_rand_expr() {
             break;
         default: {
             gen_rand_expr();
-            char op = gen_rand_op();
-            if (op == '/') { // 除法时右侧强制非零
-                gen('(');
-                gen_num_non_zero();
-                gen(')');
-            } else {
-                gen_rand_expr();
-            }
+            
+            gen_rand_op();
+            
+            gen_rand_expr();
             break;
         }
     }
@@ -135,17 +112,22 @@ int main(int argc, char *argv[]) {
         fputs(code_buf, fp);
         fclose(fp);
 
-        int ret = system("gcc /tmp/.code.c -o /tmp/.expr 2>/dev/null");
+        
+        int ret = system("gcc -Wall -Werror /tmp/.code.c -o /tmp/.expr 2>/dev/null");
+
         if (ret != 0) continue;
 
+        // 运行并检查
         fp = popen("/tmp/.expr", "r");
-        assert(fp != NULL);
-
+        if (fp == NULL) continue;
+        
+        
         int result;
         ret = fscanf(fp, "%d", &result);
         pclose(fp);
+        printf("%u %s\n", result, buf); // 输出%d
 
-        printf("%d %s\n", result, buf); // 输出%d
+        
     }
     return 0;
 }
