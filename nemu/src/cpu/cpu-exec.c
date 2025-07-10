@@ -23,7 +23,7 @@
  * This is useful when you use the `si' command.
  * You can modify this value as you want.
  */
-#define MAX_INST_TO_PRINT 2//最多打印十条指令
+#define MAX_INST_TO_PRINT 10//最多打印十条指令
 
 CPU_state cpu = {};//记录CPU的状态（执行到了哪个地址PC，寄存器值等）
 uint64_t g_nr_guest_inst = 0;//统计总共执行了多少条“guest”指令
