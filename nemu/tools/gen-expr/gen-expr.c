@@ -239,28 +239,18 @@ int main(int argc, char *argv[]) {
         assert(fp != NULL);
         fputs(code_buf, fp);
         fclose(fp);
+
+        
         // 编译语句不变
         int ret = system("gcc /tmp/.code.c -o /tmp/.expr ");
         // 2>/dev/null
         if (ret != 0) continue;
 
-
         // 运行并检查
         fp = popen("/tmp/.expr", "r");
-        if (fp == NULL) continue;
-//         if (fp) {
-//         char line[1024];
-//         while (fgets(line, sizeof(line), fp)) {
-//         if (strstr(line, "warning: division by zero") || 
-//             strstr(line, "warning: integer overflow")) {
-//             pclose(fp);
-//             continue; // 跳过含警告的表达式
+        if (fp == NULL|| ret != 1) continue;
         
-
         
-//         }
-//     }
-// }
         int result;
         ret = fscanf(fp, "%d", &result);
         pclose(fp);
