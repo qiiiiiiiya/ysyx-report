@@ -154,30 +154,17 @@ static int cmd_info(char *args)
 //     }
 //     int n=strtol(arg1,NULL,10);
 //     vaddr_t base_addr=strtol(arg2,NULL,16);
-//     // for(int i=0;i<n;)
-//     // {
-//     //     printf("0x%08x:",base_addr);
+//     for(int i=0;i<n;)
+//     {
+//         printf("0x%08x:",base_addr);
      
-//     //     for(int j=0;i<n&&j<4;i++,j++)
-//     //     {
-//     //         word_t data=vaddr_read(base_addr,4);
-//     //         printf("0x%08x\t",data);
-//     //         base_addr+=4;
-//     //     }
-//     //     printf("\n");
-//     // }
-
-//     for(int i=0;i<n;i++){
-//         if(i%4==0) {
-//             printf("0x%08x:",base_addr);
+//         for(int j=0;i<n&&j<4;i++,j++)
+//         {
+//             word_t data=vaddr_read(base_addr,4);
+//             printf("0x%08x\t",data);
+//             base_addr+=4;
 //         }
-//         word_t data=vaddr_read(base_addr,4);
-//         printf("0x%08x\t",data);
-//         base_addr+=1;
-//         if((i+1)%4==0) {
-//             printf("\n");
-//         }
-      
+//         printf("\n");
 //     }
 //     return 0;
 // }
@@ -226,7 +213,6 @@ static int cmd_x(char *args){
      
     return 0;
 }
-
 static int cmd_p(char *args) {
   if (args == NULL || *args == '\0') {  // 检查是否有输入的表达式
     printf("Usage: p <expression>\n");
@@ -239,7 +225,7 @@ static int cmd_p(char *args) {
 
   if (success) {
     // 输出结果（以十六进制和十进制两种形式）
-    printf("08x%x (%u)\n", (unsigned)result, (unsigned)result);
+    printf("0x%08x (%u)\n", (unsigned)result, (unsigned)result);
   } else {
     printf("Failed to evaluate expression: %s\n", args);
   }
