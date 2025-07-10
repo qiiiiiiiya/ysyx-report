@@ -140,45 +140,90 @@ static int cmd_info(char *args)
 
 //扫描内存
 
-static int cmd_x(char *args)
-{
-    char *arg1=strtok(NULL," ");
-    if(arg1==NULL) {
-        printf("Unknown input,please try it in a standard format");
-        return 0;
-    }
-    char *arg2=strtok(NULL," ");
-    if(arg2==NULL) {
-printf("Unknown input,please try it in a standard format");
-        return 0;
-    }
-    int n=strtol(arg1,NULL,10);
-    vaddr_t base_addr=strtol(arg2,NULL,16);
-    // for(int i=0;i<n;)
-    // {
-    //     printf("0x%08x:",base_addr);
+// static int cmd_x(char *args)
+// {
+//     char *arg1=strtok(NULL," ");
+//     if(arg1==NULL) {
+//         printf("Unknown input,please try it in a standard format");
+//         return 0;
+//     }
+//     char *arg2=strtok(NULL," ");
+//     if(arg2==NULL) {
+// printf("Unknown input,please try it in a standard format");
+//         return 0;
+//     }
+//     int n=strtol(arg1,NULL,10);
+//     vaddr_t base_addr=strtol(arg2,NULL,16);
+//     // for(int i=0;i<n;)
+//     // {
+//     //     printf("0x%08x:",base_addr);
      
-    //     for(int j=0;i<n&&j<4;i++,j++)
-    //     {
-    //         word_t data=vaddr_read(base_addr,4);
-    //         printf("0x%08x\t",data);
-    //         base_addr+=4;
-    //     }
-    //     printf("\n");
-    // }
+//     //     for(int j=0;i<n&&j<4;i++,j++)
+//     //     {
+//     //         word_t data=vaddr_read(base_addr,4);
+//     //         printf("0x%08x\t",data);
+//     //         base_addr+=4;
+//     //     }
+//     //     printf("\n");
+//     // }
 
-    for(int i=0;i<n;i++){
-        if(i%4==0) {
-            printf("0x%08x:",base_addr);
-        }
-        word_t data=vaddr_read(base_addr,4);
-        printf("0x%08x\t",data);
-        base_addr+=4;
-        if((i+1)%4==0) {
-            printf("\n");
-        }
+//     for(int i=0;i<n;i++){
+//         if(i%4==0) {
+//             printf("0x%08x:",base_addr);
+//         }
+//         word_t data=vaddr_read(base_addr,4);
+//         printf("0x%08x\t",data);
+//         base_addr+=1;
+//         if((i+1)%4==0) {
+//             printf("\n");
+//         }
       
+//     }
+//     return 0;
+// }
+static int cmd_x(char *args){
+    //获取内存起始地址和扫描长度。
+    if(args == NULL){
+        printf("too few parameter! \n");
+        return 1;
     }
+     
+    char *arg = strtok(args," ");
+    if(arg == NULL){
+        printf("too few parameter! \n");
+        return 1;
+    }
+    int  n = atoi(arg);
+    char *EXPR = strtok(NULL," ");
+    if(EXPR == NULL){                                                                                                                                          
+        printf("too few parameter! \n");
+        return 1;
+    }
+    if(strtok(NULL," ")!=NULL){
+        printf("too many parameter! \n");
+        return 1;
+    }
+    bool success = true;
+    //vaddr_t addr = expr(EXPR , &success);
+    if (success!=true){
+        printf("ERRO!!\n");
+        return 1;
+    }
+    char *str;
+   // vaddr_t addr = atoi(EXPR);
+    vaddr_t addr =  strtol( EXPR,&str,16 );
+   // printf("%#lX\n",ad);
+    //进行内存扫描,每次四个字节;
+    for(int i = 0 ; i < n ; i++){
+        uint32_t data = vaddr_read(addr + i * 4,4);
+        printf("0x%08x  " , addr + i * 4 );
+        for(int j =0 ; j < 4 ; j++){
+            printf("0x%02x " , data & 0xff);
+            data = data >> 8 ;
+        }
+        printf("\n");
+    }
+     
     return 0;
 }
 

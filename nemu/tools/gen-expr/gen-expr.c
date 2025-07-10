@@ -241,14 +241,13 @@ int main(int argc, char *argv[]) {
         fclose(fp);
 
         
-        // 编译语句不变
-        int ret = system("gcc /tmp/.code.c -o /tmp/.expr ");
-        // 2>/dev/null
+        int ret = system("gcc -Wall -Werror /tmp/.code.c -o /tmp/.expr 2>/dev/null");
+
         if (ret != 0) continue;
 
         // 运行并检查
         fp = popen("/tmp/.expr", "r");
-        if (fp == NULL|| ret != 1) continue;
+        if (fp == NULL) continue;
         
         
         int result;
