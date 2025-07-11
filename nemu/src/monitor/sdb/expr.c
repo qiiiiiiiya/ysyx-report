@@ -12,7 +12,6 @@
 *
 * See the Mulan PSL v2 for more details.
 ***************************************************************************************/
-
 #include <isa.h>
 
 /* We use the POSIX regex functions to process regular expressions.
@@ -40,7 +39,7 @@ enum {
     TK_PLUS, TK_MINUS, TK_MUL, TK_DIV,
     TK_EQ, TK_NEQ, TK_GT, TK_LT, TK_GE, TK_LE,
     TK_AND, TK_OR, TK_NUM, TK_LPAREN, TK_RPAREN,
-    TK_HEX, TK_REG, TK_DEREF, TK_MINUS_F
+    TK_HEX, TK_REG, TK_DEREF, TK_MINUS_F,TK_PC
 };
 
 static struct rule {
@@ -48,8 +47,9 @@ static struct rule {
     int token_type;
 } rules[] = {
     {"0x[0-9a-fA-F]+", TK_HEX},          // 十六进制数
-    {"[a-z][a-z0-9]{0,2}", TK_REG},  // 寄存器匹配规则（带或不带$）
-    {"\\$[0-9]", TK_REG}, 
+    {"\\$pc",TK_PC},                   // PC寄存器
+    {"\\$[a-z][a-z0-9]{0,2}", TK_REG},  // 寄存器匹配规则（带或不带$）
+    {"\\$\\$[0-9]", TK_REG}, 
     {" +", TK_NOTYPE},                    // 空格
     {"\\(", TK_LPAREN},                   // 左括号
     {"\\)", TK_RPAREN},                   // 右括号
@@ -211,6 +211,10 @@ static /*word_t*/int64_t eval(int p, int q, bool *success) {
                 if (!reg_success) { *success = false; return 0; }
                 return (int64_t)(int32_t)val;
             }
+            case TK_PC: {
+                // 处理$pc寄存器
+                return (int64_t)(int32_t)cpu.pc;
+            }
             default: *success = false; return 0;
         }
     }
@@ -219,10 +223,10 @@ static /*word_t*/int64_t eval(int p, int q, bool *success) {
     int op_pos = find_operator(p, q);
     if (op_pos != -1) {
         // 找到二元运算符，正常处理
-        /*word_t*/int64_t left_val = eval(p, op_pos - 1, success);
+        int64_t left_val = eval(p, op_pos - 1, success);
         if (!*success) return 0;
         
-        /*word_t*/int64_t right_val = eval(op_pos + 1, q, success);
+        int64_t right_val = eval(op_pos + 1, q, success);
         if (!*success) return 0;
         
         switch (tokens[op_pos].type) {
@@ -252,7 +256,7 @@ static /*word_t*/int64_t eval(int p, int q, bool *success) {
         }
         
         // 递归计算后续表达式
-        /*word_t*/int64_t val = eval(p + 1, q, success);
+        int64_t val = eval(p + 1, q, success);
         if (!*success) return 0;
         
         switch (tokens[p].type) {
@@ -321,7 +325,6 @@ word_t expr(char *e, bool *success) {
     recognize_minus();
     
     *success = true;
-    /*word_t*/int64_t result = eval(0, nr_token - 1, success);
-    // return *success ? result : 0;
+    int64_t result = eval(0, nr_token - 1, success);
     return (word_t)(uint32_t)result;
 }
