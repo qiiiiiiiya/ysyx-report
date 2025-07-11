@@ -40,7 +40,7 @@ enum {
     TK_PLUS, TK_MINUS, TK_MUL, TK_DIV,
     TK_EQ, TK_NEQ, TK_GT, TK_LT, TK_GE, TK_LE,
     TK_AND, TK_OR, TK_NUM, TK_LPAREN, TK_RPAREN,
-    TK_HEX, TK_REG, TK_DEREF, TK_MINUS_F
+    TK_HEX, TK_REG, TK_DEREF, TK_MINUS_F,TK_PC
 };
 
 static struct rule {
@@ -50,6 +50,7 @@ static struct rule {
     {"0x[0-9a-fA-F]+", TK_HEX},          // 十六进制数
     {"$[a-z][a-z0-9]{0,2}", TK_REG},  // 寄存器匹配规则（带或不带$）
     {"\\$$[0-9]", TK_REG}, 
+    {"\\$pc",TK_PC},
     {" +", TK_NOTYPE},                    // 空格
     {"\\(", TK_LPAREN},                   // 左括号
     {"\\)", TK_RPAREN},                   // 右括号
@@ -210,6 +211,10 @@ static /*word_t*/int64_t eval(int p, int q, bool *success) {
                 word_t val = isa_reg_str2val(tokens[p].str, &reg_success);
                 if (!reg_success) { *success = false; return 0; }
                 return (int64_t)(int32_t)val;
+            }
+            case TK_PC: {
+                // 处理$pc寄存器
+                return (int64_t)(int32_t)cpu.pc;
             }
             default: *success = false; return 0;
         }
