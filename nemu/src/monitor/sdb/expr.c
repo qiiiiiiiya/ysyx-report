@@ -48,9 +48,10 @@ static struct rule {
     int token_type;
 } rules[] = {
     {"0x[0-9a-fA-F]+", TK_HEX},          // 十六进制数
-    {"$[a-z][a-z0-9]{0,2}", TK_REG},  // 寄存器匹配规则（带或不带$）
-    {"\\$$[0-9]", TK_REG}, 
-    {"\\$pc",TK_PC},
+    {"\\$[a-z][a-z0-9]{0,2}", TK_REG},  // 寄存器匹配规则（带或不带$）
+    {"\\$\\$[0-9]", TK_REG}, 
+    {"\\$pc",TK_PC},                   // PC寄存器
+    {"[a-zA-Z_][a-zA-Z0-9_]*", TK_NOTYPE}, // 标识符（变量名等）    
     {" +", TK_NOTYPE},                    // 空格
     {"\\(", TK_LPAREN},                   // 左括号
     {"\\)", TK_RPAREN},                   // 右括号
