@@ -10,3 +10,4 @@ print x
 continue
 quit
 layout src可视化代码调试布局
+finish 执行完当前函数后暂停
