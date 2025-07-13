@@ -35,7 +35,7 @@ int main(int argc, char *argv[]) {
 #endif
 
     // 检查是否启用测试模式（通过命令行参数控制）
-    bool run_test = true;
+    bool run_test = false;
 
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "-t") == 0 || strcmp(argv[i], "--test") == 0) {
