@@ -40,7 +40,7 @@ static void gen(char c) {
     buf[buf_pos++] = c;
 }
 
-// 生成普通数字（允许0）
+// 生成普通数字
 static void gen_num() {
     int num = rand() % 100;
     int len = 0, tmp = num;
@@ -66,9 +66,10 @@ static char gen_rand_op() {
     buf[buf_pos++] = op[pos];
     return op[pos];
 }
-//65530
+
 static void gen_rand_expr() {
     if (buf_pos > 1000) {
+        //识别错误    
         gen('$');
         return;
     }
@@ -112,7 +113,7 @@ int main(int argc, char *argv[]) {
         fputs(code_buf, fp);
         fclose(fp);
 
-        
+        //在编译时刻把潜在的fault直接转变成failure
         int ret = system("gcc -Wall -Werror /tmp/.code.c -o /tmp/.expr 2>/dev/null");
 
         if (ret != 0) continue;
