@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
 
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "-t") == 0 || strcmp(argv[i], "--test") == 0) {
-            run_test = true;
+            run_test = false;
             break;
         }
     }

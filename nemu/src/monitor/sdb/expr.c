@@ -40,16 +40,19 @@ enum {
     TK_PLUS, TK_MINUS, TK_MUL, TK_DIV,
     TK_EQ, TK_NEQ, TK_GT, TK_LT, TK_GE, TK_LE,
     TK_AND, TK_OR, TK_NUM, TK_LPAREN, TK_RPAREN,
-    TK_HEX, TK_REG, TK_DEREF, TK_MINUS_F
+    TK_HEX, TK_REG, TK_DEREF, TK_MINUS_F,TK_PC
 };
 
 static struct rule {
     const char *regex;
     int token_type;
 } rules[] = {
+    //用//是因为有些有其它含义，，在这里只用它的字面意思
     {"0x[0-9a-fA-F]+", TK_HEX},          // 十六进制数
-    {"[a-z][a-z0-9]{0,2}", TK_REG},  // 寄存器匹配规则（带或不带$）
-    {"\\$[0-9]", TK_REG}, 
+    {"\\$[a-z][a-z0-9]{0,2}", TK_REG},  // 寄存器匹配规则（带或不带$）
+    {"\\$\\$[0-9]", TK_REG}, 
+    {"\\$pc",TK_PC},                   // PC寄存器
+    {"[a-zA-Z_][a-zA-Z0-9_]*", TK_NOTYPE}, // 标识符（变量名等）    
     {" +", TK_NOTYPE},                    // 空格
     {"\\(", TK_LPAREN},                   // 左括号
     {"\\)", TK_RPAREN},                   // 右括号
@@ -82,7 +85,7 @@ void init_regex() {
         }
     }
 }
-
+//解引用和乘号区分
 static void recognize_deref() {
     for (int i = 0; i < nr_token; i++) {
         if (tokens[i].type == TK_MUL) {
@@ -107,7 +110,7 @@ static void recognize_deref() {
         }
     }
 }
-
+//负号和减号区分
 static void recognize_minus() {
     for (int i = 0; i < nr_token; i++) {
         if (tokens[i].type == TK_MINUS) {
@@ -148,7 +151,7 @@ static bool check_parentheses(int p, int q) {
     }
     return count == 0;
 }
-
+//找到主运算符
 static int find_operator(int p, int q) {
     int bracket_count = 0;
     int op_pos = -1;
@@ -177,7 +180,7 @@ static int find_operator(int p, int q) {
                 tokens[i].type == TK_MUL || tokens[i].type == TK_DIV) {
                 
                 int op_priority = priority[tokens[i].type];
-                // 优先级相同则选择右侧运算符（左结合）
+                // 优先级相同则选择右侧运算符
                 if (op_priority <= min_priority) {
                     min_priority = op_priority;
                     op_pos = i;
@@ -189,13 +192,13 @@ static int find_operator(int p, int q) {
     return op_pos;
 }
 
-static /*word_t*/int64_t eval(int p, int q, bool *success) {
+static int64_t eval(int p, int q, bool *success) {
     if (p > q) {
         *success = false;
         return 0;
     }
     
-    // 处理括号：若整体被括号包裹且匹配，直接计算内部
+    // 处理括号
     if (check_parentheses(p, q)) {
         return eval(p + 1, q - 1, success);
     }
@@ -210,6 +213,10 @@ static /*word_t*/int64_t eval(int p, int q, bool *success) {
                 word_t val = isa_reg_str2val(tokens[p].str, &reg_success);
                 if (!reg_success) { *success = false; return 0; }
                 return (int64_t)(int32_t)val;
+            }
+            case TK_PC: {
+                // 处理$pc寄存器
+                return (int64_t)(int32_t)cpu.pc;
             }
             default: *success = false; return 0;
         }
@@ -252,11 +259,11 @@ static /*word_t*/int64_t eval(int p, int q, bool *success) {
         }
         
         // 递归计算后续表达式
-        /*word_t*/int64_t val = eval(p + 1, q, success);
+        int64_t val = eval(p + 1, q, success);
         if (!*success) return 0;
         
         switch (tokens[p].type) {
-            case TK_MINUS_F: return /*((~val) + 1*/-val;  // 二进制补码取负
+            case TK_MINUS_F: return -val;  // 二进制补码取负
             case TK_DEREF: return (int64_t)(int32_t)vaddr_read((vaddr_t)val, 4);
             default: *success = false; return 0;
         }
@@ -321,7 +328,6 @@ word_t expr(char *e, bool *success) {
     recognize_minus();
     
     *success = true;
-    /*word_t*/int64_t result = eval(0, nr_token - 1, success);
-    // return *success ? result : 0;
+    int64_t result = eval(0, nr_token - 1, success);
     return (word_t)(uint32_t)result;
 }
