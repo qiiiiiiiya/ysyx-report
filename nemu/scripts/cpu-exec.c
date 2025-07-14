@@ -41,7 +41,7 @@ static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
 
 /*new*/
 // #ifdef CONFIG_WATCHPOINT
-static void watchpoint_check(){
+// static void watchpoint_check(){
   WP *cur=head;
   while(cur){
     bool success;
@@ -61,7 +61,7 @@ static void watchpoint_check(){
       return;  // 找到一个变化即暂停
     }
     cur = cur->next;
-  }
+  // }
 }
 // #else
 // #define watchpoint_check(addr) do {} while (0)
