@@ -18,3 +18,8 @@ cp -r ps_2/. pss2/
 
 tmux无法滑动解决方案：Ctrl+B+冒号 输入：set -g mouse on 再回车
 
+创建分支，合并分支，查看分支
+git branch PA1
+git branch 
+拉取最新代码：git pull origin PA1
+git merge PA2
