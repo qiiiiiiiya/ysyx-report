@@ -89,7 +89,7 @@ static void free_wp(WP *wp){
   free_=wp;
 }
 /* TODO: Implement the functionality of watchpoint */
-void wp_watch(char *expr,word_t res){
+void wp_watch(const char *expr,word_t res){
     WP* wp=new_wp();
     strcpy(wp->expr,expr);
     wp->old_value=res;
