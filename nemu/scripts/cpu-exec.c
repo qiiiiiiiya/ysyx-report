@@ -39,9 +39,9 @@ static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
   if (g_print_step) { IFDEF(CONFIG_ITRACE, puts(_this->logbuf)); }
   IFDEF(CONFIG_DIFFTEST, difftest_step(_this->pc, dnpc));
 
-/*new*/
+/*new
 // #ifdef CONFIG_WATCHPOINT
-// static void watchpoint_check(){
+static void watchpoint_check(){
   WP *cur=head;
   while(cur){
     bool success;
@@ -66,7 +66,30 @@ static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
 // #else
 // #define watchpoint_check(addr) do {} while (0)
 // #endif 
-/*new*/
+new*/
+  watchpoint_check();  // 关键：执行观察点检查
+}
+static void watchpoint_check() {
+  WP *cur = head;  // 假设 head 是观察点链表的头指针（需确保已正确初始化）
+  while (cur) {
+    bool success;
+    word_t new_val = expr(cur->expr, &success);  // 解析表达式
+    if (!success) {
+      printf("表达式有误：%s\n", cur->expr);
+      cur = cur->next;
+      continue;
+    }
+    // 检查表达式结果是否变化（对于 $pc==0x80000008 这类条件，每次需重新计算是否为真）
+    // 注意：原逻辑是比较值变化，而观察点是条件判断，这里需要修改逻辑！
+    if (new_val != 0) {  // 表达式结果为非0（真），触发观察点
+      printf("\nWatchpoint %d triggered:\n", cur->NO);
+      printf("Expression: %s\n", cur->expr);
+      printf("Condition is true at pc = 0x%x\n", cpu.pc);  // 输出当前PC
+      nemu_state.state = NEMU_STOP;  // 暂停CPU执行
+      return;
+    }
+    cur = cur->next;
+  }
 }
 
 static void exec_once(Decode *s, vaddr_t pc) {
