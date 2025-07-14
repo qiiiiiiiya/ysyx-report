@@ -216,7 +216,7 @@ static int64_t eval(int p, int q, bool *success) {
             }
             case TK_PC: {
                 // 处理$pc寄存器
-                return (int64_t)(int32_t)cpu.pc;
+                return (int64_t)(uint32_t)cpu.pc;
             }
             default: *success = false; return 0;
         }
