@@ -40,14 +40,14 @@ static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
   IFDEF(CONFIG_DIFFTEST, difftest_step(_this->pc, dnpc));
 
 /*new*/
-#ifdef CONFIG_WATCHPOINT
+// #ifdef CONFIG_WATCHPOINT
 static void watchpoint_check(){
   WP *cur=head;
   while(cur){
     bool success;
     word_t new_val=expr(cur->expr,&success);
     if(!success){
-      printf("表达式有误");
+      printf("表达式有误欧");
       cur=cur->next;
       continue;
     }
@@ -63,9 +63,9 @@ static void watchpoint_check(){
     cur = cur->next;
   }
 }
-#else
-#define watchpoint_check(addr) do {} while (0)
-#endif 
+// #else
+// #define watchpoint_check(addr) do {} while (0)
+// #endif 
 /*new*/
 }
 
@@ -153,5 +153,6 @@ void cpu_exec(uint64_t n) {
           nemu_state.halt_pc);
       // fall through
     case NEMU_QUIT: statistic();
+    case NEMU_STOP: return sdb_mainloop();
   }
 }
