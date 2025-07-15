@@ -41,33 +41,15 @@ static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
 
 /*new*/
 #ifdef CONFIG_WATCHPOINT
-static void watchpoint_check(){
-  WP *cur=head;
-  while(cur){
-    bool success;
-    word_t new_val=expr(cur->expr,&success);
-    if(!success){
-      printf("表达式有误");
-      cur=cur->next;
-      continue;
-    }
-    if (new_val != cur->old_value) {  // 值变化：触发断点
-      printf("\nWatchpoint %d triggered:\n", cur->NO);
-      printf("Expression: %s\n", cur->expr);
-      printf("Old value: 0x%x\n", cur->old_value);
-      printf("New value: 0x%x\n", new_val);
-      cur->old_value = new_val;  // 更新旧值（下次基于新值检测）
-      nemu_state.state = NEMU_STOP;  // 暂停CPU执行
-      return;  // 找到一个变化即暂停
-    }
-    cur = cur->next;
-  }
+bool check=check_watchpoint();
+if(check){
+  nemu_state.state = NEMU_STOP;
+  printf("Watchpoint triggered, execution paused.\n");
+  return;
 }
-#else
-#define watchpoint_check(addr) do {} while (0)
-#endif 
-/*new*/
+#endif
 }
+
 
 static void exec_once(Decode *s, vaddr_t pc) {
   s->pc = pc;

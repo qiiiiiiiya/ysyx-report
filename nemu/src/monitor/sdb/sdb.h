@@ -27,6 +27,6 @@ void wp_watch(const char *expr, word_t res);
 void wp_remove(int no);
 
 void wp_iterate(void);
-
+bool check_watchpoint(void);
 
 #endif

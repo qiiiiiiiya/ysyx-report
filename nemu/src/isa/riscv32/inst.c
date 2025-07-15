@@ -23,7 +23,7 @@
 #define Mw vaddr_write
 
 enum {
-  TYPE_I, TYPE_U, TYPE_S,TYPE_J,
+  TYPE_I, TYPE_U, TYPE_S,TYPE_J,TYPE_R,
   TYPE_N, // none
 };
 
@@ -39,6 +39,9 @@ enum {
 //J型，
 #define immJ() do { *imm = (SEXT(BITS(i, 31, 31), 1) << 20)  | (BITS(i, 21, 19) << 11) | (BITS(i, 19, 12)<<12)| (BITS(i, 30, 21) << 1) ; } while(0)
 //#define immJ() do { *imm = (SEXT(BITS(i, 31, 31), 1) << 20) | BITS(i, 30, 21) << 1 |BITS(i, 20, 20) << 11 | BITS(i, 19, 12) << 12 ; } while(0)
+
+//R型，
+#define immR() do { *imm = 0; } while(0)
 static void decode_operand(Decode *s, int *rd, word_t *src1, word_t *src2, word_t *imm, int type) {
   uint32_t i = s->isa.inst;
   int rs1 = BITS(i, 19, 15);
@@ -49,6 +52,7 @@ static void decode_operand(Decode *s, int *rd, word_t *src1, word_t *src2, word_
     case TYPE_U:                   immU(); break;
     case TYPE_S: src1R(); src2R(); immS(); break;
     case TYPE_J:                 ; immJ(); break;
+    case TYPE_R: src1R(); src2R(); immR(); break;
     case TYPE_N: break;
     default: panic("unsupported type = %d", type);
   }
@@ -74,7 +78,12 @@ static int decode_exec(Decode *s) {
   //INSTPAT("0000000 ????? ????? 000 ????? 01100 11", li    , R(rd) = src1 + src2);
   INSTPAT("??????? ????? ????? 010 ????? 01000 11", sw     , S, Mw(src1 + imm, 4, src2));
   INSTPAT("??????? ????? ????? 000 ????? 11001 11", jalr   , I, R(rd) = s->snpc + 4, s->dnpc = (src1 + imm) & ~1);
-  INSTPAT("??????? ????? ????? 010 ????? 00000 11", lw     , I, R(rd) = Mr(src1 + imm, 4));
+  //INSTPAT("??????? ????? ????? 010 ????? 00000 11", lw     , I, R(rd) = Mr(src1 + imm, 4));
+  //INSTPAT("0000000 ????? ????? 000 ????? 01100 11", add    , R, R(rd) = src1 + src2);
+  //INSTPAT("0000000 ????? ????? 100 ????? 00101 11", sub    , R, R(rd) = src1 - src2);
+  //INSTPAT("0000000 ????? ????? 001 ????? 00101 11", sll    , R, R(rd) = src1 << (src2 & 0x1f));
+  //INSTPAT("0000000 ????? ????? 101 ????? 00101 11", srl    , R, R(rd) = src1 >> (src2 & 0x1f));
+  //INSTPAT("0000000 ????? ?????  110 ????? 00101 11", sra    , R, R(rd) = (int64_t)src1 >> (src2 & 0x1f));
 
   
   

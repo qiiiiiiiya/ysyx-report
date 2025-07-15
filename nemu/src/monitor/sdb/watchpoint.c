@@ -114,3 +114,21 @@ void wp_iterate(){
         h=h->next;
     }
 }
+bool check_watchpoint() {
+	bool check = false;
+	bool success = false;
+	uint32_t temp = 0;
+	for(int i = 0; i < NR_WP; i++) {
+		if(wp_pool[i].expr[0] != '\0') {
+			temp = expr(wp_pool[i].expr, &success);
+			if(temp != wp_pool[i].old_value) {
+				printf("Watchpoint %d: %s\n", wp_pool[i].NO, wp_pool[i].expr);
+				printf("old value: %d\n", wp_pool[i].old_value);
+				printf("new value: %d\n\n", temp);
+				wp_pool[i].old_value = temp;
+				check = true;
+			}
+		}
+	}
+	return check;
+}
