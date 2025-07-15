@@ -36,8 +36,8 @@ enum {
 //S型，提取指令的为31到25位和11到7位的立即数（immS），并将其拼接成12位立即数
 #define immS() do { *imm = (SEXT(BITS(i, 31, 25), 7) << 5) | BITS(i, 11, 7); } while(0)
 
-//J型，提取指令的为31到12位的立即数（immJ），并将其拼接成20位立即数
-#define immJ() do { *imm = (SEXT(BITS(i, 31, 31), 1) << 20) | (BITS(i, 30, 21) << 1) | (BITS(i, 21, 19) << 11) | (BITS(i, 19, 12) << 12); } while(0)
+//J型，
+#define immJ() do { *imm = (SEXT(BITS(i, 31, 31), 1) << 20) | (BITS(i, 30, 21) << 9) | (BITS(i, 21, 19) << 7) | (BITS(i, 19, 12)); } while(0)
 
 static void decode_operand(Decode *s, int *rd, word_t *src1, word_t *src2, word_t *imm, int type) {
   uint32_t i = s->isa.inst;
@@ -69,6 +69,7 @@ static int decode_exec(Decode *s) {
   //new
   INSTPAT("??????? ????? ????? 000 ????? 00100 11", addi   , I, R(rd) = src1 + imm);
   INSTPAT("??????? ????? ????? ??? ????? 01101 11", lui    , U, R(rd) = imm << 12);
+  //INSTPAT("0000000 ????? ????? 000 ????? 01100 11", li    , R(rd) = src1 + src2);
   //new
   INSTPAT("??????? ????? ????? ??? ????? 00101 11", auipc  , U, R(rd) = s->pc + (imm << 12));
   INSTPAT("??????? ????? ????? 100 ????? 00000 11", lbu    , I, R(rd) = Mr(src1 + imm, 1));
