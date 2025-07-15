@@ -31,8 +31,15 @@ static uint64_t g_timer = 0; // unit: us//记录模拟器运行花费了多少�
 static bool g_print_step = false;//标记是否需要单步打印指令详情
 
 void device_update();
-
+extern bool check_watchpoint(void);
 static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
+  bool check=check_watchpoint();
+if(check){
+  nemu_state.state = NEMU_STOP;
+  printf("Watchpoint triggered, execution paused.\n");
+  return;
+}
+
 #ifdef CONFIG_ITRACE_COND
   if (ITRACE_COND) { log_write("%s\n", _this->logbuf); }
 #endif
@@ -40,14 +47,9 @@ static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
   IFDEF(CONFIG_DIFFTEST, difftest_step(_this->pc, dnpc));
 
 /*new*/
-#ifdef CONFIG_WATCHPOINT
-bool check=check_watchpoint();
-if(check){
-  nemu_state.state = NEMU_STOP;
-  printf("Watchpoint triggered, execution paused.\n");
-  return;
-}
-#endif
+//#ifdef CONFIG_WATCHPOINT
+
+//#endif
 }
 
 
