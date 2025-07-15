@@ -79,8 +79,6 @@ static void watchpoint_check() {
       cur = cur->next;
       continue;
     }
-    // 检查表达式结果是否变化（对于 $pc==0x80000008 这类条件，每次需重新计算是否为真）
-    // 注意：原逻辑是比较值变化，而观察点是条件判断，这里需要修改逻辑！
     if (new_val != 0) {  // 表达式结果为非0（真），触发观察点
       printf("\nWatchpoint %d triggered:\n", cur->NO);
       printf("Expression: %s\n", cur->expr);
