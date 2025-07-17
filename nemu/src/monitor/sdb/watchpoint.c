@@ -89,7 +89,7 @@ static void free_wp(WP *wp){
   free_=wp;
 }
 /* TODO: Implement the functionality of watchpoint */
-void wp_watch(const char *expr,word_t res){
+void wp_watch(char *expr,word_t res){
     WP* wp=new_wp();
     strcpy(wp->expr,expr);
     wp->old_value=res;
@@ -113,22 +113,4 @@ void wp_iterate(){
         printf("%-8d%-8s%-8d\n",h->NO,h->expr,h->old_value);
         h=h->next;
     }
-}
-bool check_watchpoint() {
-	bool check = false;
-	bool success = false;
-	uint32_t temp = 0;
-	for(int i = 0; i < NR_WP; i++) {
-		if(wp_pool[i].expr[0] != '\0') {
-			temp = expr(wp_pool[i].expr, &success);
-			if(temp != wp_pool[i].old_value) {
-				printf("Watchpoint %d: %s\n", wp_pool[i].NO, wp_pool[i].expr);
-				printf("old value: %d\n", wp_pool[i].old_value);
-				printf("new value: %d\n\n", temp);
-				wp_pool[i].old_value = temp;
-				check = true;
-			}
-		}
-	}
-	return check;
 }

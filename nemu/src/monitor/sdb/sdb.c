@@ -21,7 +21,7 @@
 #include <memory/paddr.h>
 #include <memory/vaddr.h>
 /**/
-// #include "watchpoint.h"
+#include "watchpoint.h"
 /**/
 
 static int is_batch_mode = false;
@@ -247,6 +247,9 @@ static int cmd_w(char *args){
   (void)val; // 避免未使用变量的警告
   return 0;
 }
+/*先识别内容格式，检查表达式是否变化，变化就暂停程序执行
+watchpoint_check(char *expr);
+*/
 
 static int cmd_d(char *args){
 //识别然后调用函数删除

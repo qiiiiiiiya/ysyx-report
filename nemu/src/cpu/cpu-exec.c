@@ -31,15 +31,8 @@ static uint64_t g_timer = 0; // unit: us//记录模拟器运行花费了多少�
 static bool g_print_step = false;//标记是否需要单步打印指令详情
 
 void device_update();
-extern bool check_watchpoint(void);
-static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
-  bool check=check_watchpoint();
-if(check){
-  nemu_state.state = NEMU_STOP;
-  printf("Watchpoint triggered, execution paused.\n");
-  return;
-}
 
+static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
 #ifdef CONFIG_ITRACE_COND
   if (ITRACE_COND) { log_write("%s\n", _this->logbuf); }
 #endif
@@ -47,11 +40,34 @@ if(check){
   IFDEF(CONFIG_DIFFTEST, difftest_step(_this->pc, dnpc));
 
 /*new*/
-//#ifdef CONFIG_WATCHPOINT
-
-//#endif
+#ifdef CONFIG_WATCHPOINT
+static void watchpoint_check(){
+  WP *cur=head;
+  while(cur){
+    bool success;
+    word_t new_val=expr(cur->expr,&success);
+    if(!success){
+      printf("表达式有误");
+      cur=cur->next;
+      continue;
+    }
+    if (new_val != cur->old_value) {  // 值变化：触发断点
+      printf("\nWatchpoint %d triggered:\n", cur->NO);
+      printf("Expression: %s\n", cur->expr);
+      printf("Old value: 0x%x\n", cur->old_value);
+      printf("New value: 0x%x\n", new_val);
+      cur->old_value = new_val;  // 更新旧值（下次基于新值检测）
+      nemu_state.state = NEMU_STOP;  // 暂停CPU执行
+      return;  // 找到一个变化即暂停
+    }
+    cur = cur->next;
+  }
 }
-
+#else
+#define watchpoint_check(addr) do {} while (0)
+#endif 
+/*new*/
+}
 
 static void exec_once(Decode *s, vaddr_t pc) {
   s->pc = pc;

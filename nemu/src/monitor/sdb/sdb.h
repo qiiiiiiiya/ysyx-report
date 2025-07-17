@@ -20,13 +20,4 @@
 
 word_t expr(char *e, bool *success);
 
-void init_wp_pool(void);
-
-void wp_watch(const char *expr, word_t res);
-
-void wp_remove(int no);
-
-void wp_iterate(void);
-bool check_watchpoint(void);
-
 #endif
