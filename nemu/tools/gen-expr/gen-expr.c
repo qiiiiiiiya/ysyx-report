@@ -20,6 +20,7 @@
 #include <assert.h>
 #include <string.h>
 
+//用于存储成的表达式字符串
 static char buf[65536] = {};
 static size_t buf_pos = 0;
 static char code_buf[65536 + 128] = {};
@@ -27,8 +28,8 @@ static char *code_format =
 "#include <stdio.h>\n"
 "#include <stdint.h>\n"
 "int main() { "
-"  int result = /*(uint32_t)*/(%s); "
-"  printf(\"%%u\", result); "
+"  unsigned result = (%s); "
+"  printf("%u", result); "
 "  return 0; "
 "}";
 
@@ -76,6 +77,7 @@ static void gen_rand_expr() {
     switch (choose(3)) {
         case 0:
             gen_num();
+            gen(" ");
             break;
         case 1:
             gen('(');
@@ -84,9 +86,7 @@ static void gen_rand_expr() {
             break;
         default: {
             gen_rand_expr();
-            
             gen_rand_op();
-            
             gen_rand_expr();
             break;
         }

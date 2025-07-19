@@ -20,9 +20,7 @@
 #include "sdb.h"
 #include <memory/paddr.h>
 #include <memory/vaddr.h>
-/**/
-#include "watchpoint.h"
-/**/
+
 
 static int is_batch_mode = false;
 
@@ -52,6 +50,8 @@ static int cmd_c(char *args) {
 
 
 static int cmd_q(char *args) {
+  //修复q报错
+  nemu_state.state=NEMU_QUIT;
   return -1;
 }
 
@@ -74,12 +74,12 @@ static struct {
   { "c", "Continue the execution of the program", cmd_c },
   /**/
   { "si", "Single-step exection",cmd_si},
-  { "info", "printf",cmd_info},
+  { "info", "Printf",cmd_info},
   { "x", "Scan memory", cmd_x},
   { "q", "Exit NEMU", cmd_q },
-  { "p", "expression",cmd_p},
-  { "w", "set watchpoint",cmd_w},
-  { "d", "delete watchpoint",cmd_d},
+  { "p", "Expression",cmd_p},
+  { "w", "Set watchpoint",cmd_w},
+  { "d", "Delete watchpoint",cmd_d},
   
   /* TODO: Add more commands */
 
@@ -131,88 +131,37 @@ static int cmd_info(char *args)
 {
     char *arg=strtok(NULL," ");
     if(strcmp(arg, "r")==0) isa_reg_display();
-    /* new */
     else if(strcmp(arg,"w")==0) wp_iterate();
-    /* new */
     else printf("Unknown input,please try it in a standard format");
     return 0;
 }
 
 //扫描内存
 
-// static int cmd_x(char *args)
-// {
-//     char *arg1=strtok(NULL," ");
-//     if(arg1==NULL) {
-//         printf("Unknown input,please try it in a standard format");
-//         return 0;
-//     }
-//     char *arg2=strtok(NULL," ");
-//     if(arg2==NULL) {
-// printf("Unknown input,please try it in a standard format");
-//         return 0;
-//     }
-//     int n=strtol(arg1,NULL,10);
-//     vaddr_t base_addr=strtol(arg2,NULL,16);
-//     for(int i=0;i<n;)
-//     {
-//         printf("0x%08x:",base_addr);
-     
-//         for(int j=0;i<n&&j<4;i++,j++)
-//         {
-//             word_t data=vaddr_read(base_addr,4);
-//             printf("0x%08x\t",data);
-//             base_addr+=4;
-//         }
-//         printf("\n");
-//     }
-//     return 0;
-// }
-static int cmd_x(char *args){
-    //获取内存起始地址和扫描长度。
-    if(args == NULL){
-        printf("too few parameter! \n");
-        return 1;
+static int cmd_x(char *args)
+{
+    char *arg1=strtok(NULL," ");
+    if(arg1==NULL) {
+        printf("Unknown input,please try it in a standard format");
+        return 0;
     }
-     
-    char *arg = strtok(args," ");
-    if(arg == NULL){
-        printf("too few parameter! \n");
-        return 1;
+    char *arg2=strtok(NULL," ");
+    if(arg2==NULL) {
+printf("Unknown input,please try it in a standard format");
+        return 0;
     }
-    int  n = atoi(arg);
-    char *EXPR = strtok(NULL," ");
-    if(EXPR == NULL){                                                                                                                                          
-        printf("too few parameter! \n");
-        return 1;
-    }
-    if(strtok(NULL," ")!=NULL){
-        printf("too many parameter! \n");
-        return 1;
-    }
-    bool success = true;
-    //vaddr_t addr = expr(EXPR , &success);
-    if (success!=true){
-        printf("ERRO!!\n");
-        return 1;
-    }
-    char *str;
-   // vaddr_t addr = atoi(EXPR);
-    vaddr_t addr =  strtol( EXPR,&str,16 );
-   // printf("%#lX\n",ad);
-    //进行内存扫描,每次四个字节;
-    for(int i = 0 ; i < n ; i++){
+    int n=strtol(arg1,NULL,10);
+    vaddr_t addr=strtol(arg2,NULL,16);
+        for(int i = 0 ; i < n ; i++){
         uint32_t data = vaddr_read(addr + i * 4,4);
         printf("0x%08x  " , addr + i * 4 );
-        for(int j =0 ; j < 4 ; j++){
-            printf("0x%02x " , data & 0xff);
-            data = data >> 8 ;
-        }
+        printf("0x%08x " , data );
+        data = data >> 8 ;
         printf("\n");
     }
-     
     return 0;
 }
+
 static int cmd_p(char *args) {
   if (args == NULL || *args == '\0') {  // 检查是否有输入的表达式
     printf("Usage: p <expression>\n");
@@ -231,7 +180,7 @@ static int cmd_p(char *args) {
   }
   return 0;
 }
-/* new*/
+
 static int cmd_w(char *args){
   if(args==NULL||*args=='\0'){
     printf("Usage: w <expression>\n");
@@ -244,12 +193,8 @@ static int cmd_w(char *args){
     return 0;
   }
   wp_watch(args,val);
-  (void)val; // 避免未使用变量的警告
   return 0;
 }
-/*先识别内容格式，检查表达式是否变化，变化就暂停程序执行
-watchpoint_check(char *expr);
-*/
 
 static int cmd_d(char *args){
 //识别然后调用函数删除
@@ -263,7 +208,7 @@ static int cmd_d(char *args){
   (void)no; // 避免未使用变量的警告
   return 0;
 }
-/*new */
+
 void sdb_set_batch_mode() {
   is_batch_mode = true;
 }

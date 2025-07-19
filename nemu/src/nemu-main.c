@@ -17,7 +17,6 @@
 #include <string.h>
 #include <assert.h>
 
-// 函数声明
 void init_monitor(int, char *[]);
 void am_init_monitor();
 void engine_start();
@@ -27,26 +26,14 @@ word_t expr(char *e, bool *success);
 #define MAX_LINE_LEN 1024
 
 int main(int argc, char *argv[]) {
-    // 初始化监控器
+  /* Initialize the monitor. */
 #ifdef CONFIG_TARGET_AM
-    am_init_monitor();
+  am_init_monitor();
 #else
-    init_monitor(argc, argv);
+  init_monitor(argc, argv);
 #endif
 
-    // 检查是否启用测试模式（通过命令行参数控制）
-    bool run_test = false;
-
-    for (int i = 1; i < argc; i++) {
-        if (strcmp(argv[i], "-t") == 0 || strcmp(argv[i], "--test") == 0) {
-            run_test = false;
-            break;
-        }
-    }
-
-    if (run_test) {
-        // 测试模式：执行测试用例验证expr()
-        FILE *fp = fopen("/home/yyq03/ysyx-workbench/nemu/tools/gen-expr/build/input", "r");
+FILE *fp = fopen("/home/yyq03/ysyx-workbench/nemu/tools/gen-expr/build/input", "r");
         if (!fp) {
             perror("无法打开测试用例文件 input");
             return 1;
@@ -61,7 +48,7 @@ int main(int argc, char *argv[]) {
 
             char *space_pos = strchr(line, ' ');
             if (!space_pos) {
-                printf("第%d行格式错误：缺少空格分隔符\n", total);
+                printf("第%d行格式错误:缺少空格分隔符\n", total);
                 continue;
             }
             *space_pos = '\0';
@@ -75,24 +62,21 @@ int main(int argc, char *argv[]) {
                 passed++;
             } else {
                 printf("测试用例 %d 失败：\n", total);
-                printf("  表达式: %s\n", expr_str);
-                printf("  预期结果: %d\n", expected);
+                printf("表达式: %s\n", expr_str);
+                printf("预期结果: %d\n", expected);
                 if (!success) {
-                    printf("  错误: 表达式解析失败\n");
+                    printf("错误: 表达式解析失败\n");
                 } else {
-                    printf("  实际结果: %d\n", actual);
+                    printf("实际结果: %d\n", actual);
                 }
             }
         }
 
         fclose(fp);
-        printf("\n测试完成：共 %d 条，通过 %d 条，通过率 %.2f%%\n",
+        printf("\n测试完成:共 %d 条，通过 %d 条，通过率 %.2f%%\n",
                total, passed, (float)passed / total * 100);
 
-        return (passed == total) ? 0 : 1;
-    } else {
-        // 正常模式：启动引擎进入后续运行界面
-        engine_start();
-        return is_exit_status_bad();
-    }
+  engine_start();
+
+  return is_exit_status_bad();
 }

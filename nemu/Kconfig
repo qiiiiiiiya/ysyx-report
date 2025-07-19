@@ -218,4 +218,5 @@ endmenu
 menu "watchpoint"
 config CONFIG_WATCHPOINT
   bool "on"
+  default n
 endmenu

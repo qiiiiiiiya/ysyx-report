@@ -12,35 +12,6 @@
 *
 * See the Mulan PSL v2 for more details.
 ***************************************************************************************/
-
-// #include "sdb.h"
-
-// #define NR_WP 32
-
-// typedef struct watchpoint {
-//   int NO;
-//   struct watchpoint *next;
-
-//   /* TODO: Add more members if necessary */
-
-// } WP;
-
-// static WP wp_pool[NR_WP] = {};
-// static WP *head = NULL, *free_ = NULL;
-
-// void init_wp_pool() {
-//   int i;
-//   for (i = 0; i < NR_WP; i ++) {
-//     wp_pool[i].NO = i;
-//     wp_pool[i].next = (i == NR_WP - 1 ? NULL : &wp_pool[i + 1]);
-//   }
-
-//   head = NULL;
-//   free_ = wp_pool;
-// }
-
-// /* TODO: Implement the functionality of watchpoint */
-
 #include "sdb.h"
 
 #define NR_WP 32
@@ -70,7 +41,8 @@ void init_wp_pool() {
   
 static WP* new_wp(){
   assert(free_);
-  WP* ret=free_;
+  //ret指向要分配的空闲节点
+  WP* ret=free_;  
   free_=free_->next;
   ret->next=head;
   head=ret;
@@ -78,8 +50,9 @@ static WP* new_wp(){
 }
 
 static void free_wp(WP *wp){
+  //h初始化正在使用中的链表的头结点，遍历链表
   WP* h=head;
-  if(h==wp) head=NULL;
+  if(h==wp) head=wp->next;
   else{
     while(h&&h->next!=wp)h=h->next;
     assert(h);
@@ -87,11 +60,13 @@ static void free_wp(WP *wp){
   }
   wp->next=free_;
   free_=wp;
-}
+} 
 /* TODO: Implement the functionality of watchpoint */
-void wp_watch(char *expr,word_t res){
+void wp_watch(const char *expr,word_t res){
     WP* wp=new_wp();
+    //存储表达式字符串
     strcpy(wp->expr,expr);
+    //记录表达式的初始值
     wp->old_value=res;
     printf("Watchpoint %d:%s\n",wp->NO,expr);
 }
@@ -108,9 +83,27 @@ void wp_iterate(){
         puts("No watchpoints.");
         return;
     }
-    printf("%-8s%-8s%-8s\n","Num","What","types");
+    printf("%-8s%-16s%-8s\n","Num","What","old_value");
     while(h){
-        printf("%-8d%-8s%-8d\n",h->NO,h->expr,h->old_value);
+        printf("%-8d%-16s%-8d\n",h->NO,h->expr,h->old_value);
         h=h->next;
     }
+}
+bool check_watchpoint() {
+	bool check = false;
+	bool success = false;
+	uint32_t temp = 0;
+	for(int i = 0; i < NR_WP; i++) {
+		if(wp_pool[i].expr[0] != '\0') {
+			temp = expr(wp_pool[i].expr, &success);
+			if(temp != wp_pool[i].old_value) {
+				printf("Watchpoint %d: %s\n", wp_pool[i].NO, wp_pool[i].expr);
+				printf("old value: %d\n", wp_pool[i].old_value);
+				printf("new value: %d\n\n", temp);
+				wp_pool[i].old_value = temp;
+				check = true;
+			}
+		}
+	}
+	return check;
 }
