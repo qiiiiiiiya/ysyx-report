@@ -344,3 +344,34 @@ elf格式强调目标链接的两种视图：
   
 
  readelf
+
+                                                              ** 基础快递员**
+printf     把包裹送到大门口显示屏（标准输出，通常是屏幕）
+    printf("hello %d","world");
+sprintf     把包裹存到仓库的纸箱（字符数组）里
+    sprintf(buf,"ID:%d", 123);
+    可能缓冲区溢出
+fprintf    把包裹送到指定地址（任意文件）
+    fprintf(file,"Log:%s","error");
+    fprintf(stderr,"Error!"); //发送到错误信息区
+                                                            **安全快递员**（带保护）
+snprintf  **安全版** sprintf,带纸箱尺寸测量仪
+  snprintf(buf,sizeof(buf), "%s",big_str);->自动截断超长内容
+  防止缓冲区溢出
+
+dprintf    直接送到门牌号地址（文件扫描符）
+    dprintf(3, "Data:%d",42);->写入文件描述符3对应的文件
+    适用场景：底层系统编程
+                                                          **组装快递员**(高级用法）
+vprintf    把已经打包过的包裹（va_list）送到大门口显示屏
+  void my_printf(const char *fmt, ...){
+    va_list args;
+    va_start(args,fmt);
+    vprintf(fmt,args);
+    va_end(args);
+    }
+  使用场景：当你想自定义一个打印函数，但最终输出到屏幕时
+vfprintf   自定义日志系统
+vsprintf  
+vsnprintf  安全的将打包好的参数存到仓库纸箱（带尺寸保护）是唯一安全的字符串格式化方式
+vdprintf
