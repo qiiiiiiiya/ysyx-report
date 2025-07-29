@@ -23,3 +23,10 @@ git branch PA1
 git branch 
 拉取最新代码：git pull origin PA1
 git merge PA2
+
+在 Python 虚拟环境中，退出虚拟环境的方法非常简单，直接在终端中执行以下命令即可：
+bash
+deactivate
+
+api:sk-ykE9gDFTfJ8izarsuJyCUhAFCFO9XbiLG9MweMnh8xFpAKd3
+deepseek:sk-ed561a1063414565909289d89a6ff2d9  
