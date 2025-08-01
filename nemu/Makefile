@@ -52,6 +52,9 @@ CFLAGS  += $(CFLAGS_BUILD) $(CFLAGS_TRACE) -D__GUEST_ISA__=$(GUEST_ISA)
 ifneq ($(CONFIG_WATCHPOINT),y)
 CFLAGS += -DCONFIG_WATCHPOINT
 endif
+ifneq ($(CONFIG_MTRACE),y)
+CFLAGS += -DCONFIG_MTRACE
+endif
 LDFLAGS += $(CFLAGS_BUILD)
 
 # Include rules for menuconfig

@@ -38,8 +38,11 @@ struct Decode;
 int isa_exec_once(struct Decode *s);
 
 // memory
+//枚举定义：直接映射，需要页表转换，转化失败
 enum { MMU_DIRECT, MMU_TRANSLATE, MMU_FAIL };
+//指令读取，数据读取，数据写入
 enum { MEM_TYPE_IFETCH, MEM_TYPE_READ, MEM_TYPE_WRITE };
+//操作成功，识别，跨页访问
 enum { MEM_RET_OK, MEM_RET_FAIL, MEM_RET_CROSS_PAGE };
 #ifndef isa_mmu_check
 int isa_mmu_check(vaddr_t vaddr, int len, int type);

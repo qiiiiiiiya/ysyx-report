@@ -35,7 +35,7 @@ __EXPORT void difftest_memcpy(paddr_t addr, void *buf, size_t n, bool direction)
   }
 }
 
-__EXPORT void difftest_regcpy(void *dut, bool direction) {
+__EXPORT (void *dut, bool direction) {
   union isa_gdb_regs qemu_r;
   gdb_getregs(&qemu_r);
   if (direction == DIFFTEST_TO_REF) {

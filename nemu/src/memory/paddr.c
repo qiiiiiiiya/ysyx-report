@@ -41,6 +41,7 @@ static void out_of_bound(paddr_t addr) {
       addr, PMEM_LEFT, PMEM_RIGHT, cpu.pc);
 }
 
+
 void init_mem() {
 #if   defined(CONFIG_PMEM_MALLOC)
   pmem = malloc(CONFIG_MSIZE);
@@ -48,9 +49,15 @@ void init_mem() {
 #endif
   IFDEF(CONFIG_MEM_RANDOM, memset(pmem, rand(), CONFIG_MSIZE));
   Log("physical memory area [" FMT_PADDR ", " FMT_PADDR "]", PMEM_LEFT, PMEM_RIGHT);
+  IFDEF(CONFIG_MTRACE,printf("mtrace enabled"));
 }
 
 word_t paddr_read(paddr_t addr, int len) {
+  #ifdef CONFIG_MTRACE
+  const char *op = "READ";  // 标记操作类型为"读"
+  printf("[%s] " FMT_PADDR " (%d) "  " @PC=" FMT_WORD "\n",
+         op, addr, len, cpu.pc);  // cpu.pc来自全局CPU状态
+  #endif
   if (likely(in_pmem(addr))) return pmem_read(addr, len);
   IFDEF(CONFIG_DEVICE, return mmio_read(addr, len));
   out_of_bound(addr);
@@ -58,6 +65,11 @@ word_t paddr_read(paddr_t addr, int len) {
 }
 
 void paddr_write(paddr_t addr, int len, word_t data) {
+  #ifdef CONFIG_MTRACE
+  const char *op = "WRITE";  // 标记操作类型为""
+  printf("[%s] " FMT_PADDR " (%d) " " @PC=" FMT_WORD "\n",
+         op, addr, len, cpu.pc);  // cpu.pc来自全局CPU状态
+  #endif
   if (likely(in_pmem(addr))) { pmem_write(addr, len, data); return; }
   IFDEF(CONFIG_DEVICE, mmio_write(addr, len, data); return);
   out_of_bound(addr);

@@ -12,7 +12,8 @@
 *
 * See the Mulan PSL v2 for more details.
 ***************************************************************************************/
-
+//下面的中文注释都是自己加的，不保证正确
+//kvm kernel-based virtual machine 基于内核的虚拟机
 // from NEMU
 #include <memory/paddr.h>
 #include <isa-def.h>
@@ -28,7 +29,7 @@
 #define CR0_PE 1u
 #define CR0_PG (1u << 31)
 
-#define RFLAGS_ID  (1u << 21)
+#define RFLAGS_ID  (1u << 21) //表示把无符号整数1左移21位
 #define RFLAGS_AC  (1u << 18)
 #define RFLAGS_RF  (1u << 16)
 #define RFLAGS_TF  (1u << 8)
@@ -139,6 +140,7 @@ static void vm_init(size_t mem_size) {
     assert(0);
   }
 
+  //input/output control
   vm.fd = ioctl(vm.sys_fd, KVM_CREATE_VM, 0);
   if (vm.fd < 0) {
     perror("KVM_CREATE_VM");
@@ -154,6 +156,7 @@ static void vm_init(size_t mem_size) {
   vm.mmio = create_mem(1, 0xa1000000, 0x1000);
 }
 
+//虚拟CPU
 static void vcpu_init() {
   int vcpu_mmap_size;
 
@@ -168,7 +171,7 @@ static void vcpu_init() {
     perror("KVM_GET_VCPU_MMAP_SIZE");
     assert(0);
   }
-
+  //memory map内存映射
   vcpu.kvm_run = mmap(NULL, vcpu_mmap_size, PROT_READ | PROT_WRITE,
       MAP_SHARED, vcpu.fd, 0);
   if (vcpu.kvm_run == MAP_FAILED) {
@@ -180,6 +183,7 @@ static void vcpu_init() {
   vcpu.int_wp_state = STATE_IDLE;
 }
 
+//主引导记录（master boot record）是位于磁盘第一个扇区的特殊数据结构，主要负责磁盘的引导启动和分区管理
 static const uint8_t mbr[] = {
   // start32:
   0x0f, 0x01, 0x15, 0x28, 0x7c, 0x00, 0x00,  // lgdtl 0x7c28
@@ -196,7 +200,7 @@ static const uint8_t mbr[] = {
   // GDT descriptor
   0x17, 0x00, 0x10, 0x7c, 0x00, 0x00
 };
-
+//
 static void setup_protected_mode(struct kvm_sregs *sregs) {
   struct kvm_segment seg = {
     .base = 0,
@@ -383,12 +387,14 @@ __EXPORT void difftest_exec(uint64_t n) {
   kvm_exec(n);
 }
 
+//差分测试中触发中断
 __EXPORT void difftest_raise_intr(word_t NO) {
   uint32_t pgate_vaddr = vcpu.kvm_run->s.regs.sregs.idt.base + NO * 8;
   uint32_t pgate = va2pa(pgate_vaddr);
   // assume code.base = 0
   uint32_t entry = vm.mem[pgate] | (vm.mem[pgate + 1] << 8) |
     (vm.mem[pgate + 6] << 16) | (vm.mem[pgate + 7] << 24);
+  //kvm的单步模式；是一种用于调试和性能分析的功能，它允许虚拟机每次只执行一条指令，然后暂停，以便开发者观察虚拟机的状态、寄存器值、内存内容等信息
   kvm_set_step_mode(true, entry);
   vcpu.int_wp_state = STATE_INT_INST;
   vcpu.has_error_code = (NO == 14);

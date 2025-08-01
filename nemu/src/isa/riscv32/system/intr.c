@@ -15,14 +15,17 @@
 
 #include <isa.h>
 
+//触发指令
+//epc:exception(异常) program counter
 word_t isa_raise_intr(word_t NO, vaddr_t epc) {
   /* TODO: Trigger an interrupt/exception with ``NO''.
    * Then return the address of the interrupt/exception vector.
    */
-
-  return 0;
+  cpu.sepc=epc;
+  cpu.cause=NO;
+  return 0x80000000;
 }
-
+//查询指令
 word_t isa_query_intr() {
   return INTR_EMPTY;
 }

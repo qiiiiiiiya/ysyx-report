@@ -17,6 +17,8 @@
 #include <memory/vaddr.h>
 #include <memory/paddr.h>
 
+//指令集架构(isa)中的内存管理单元(MMU)执行地址转换的过程
+//程序使用中的虚拟地址转换成物理内存中的实际地址
 paddr_t isa_mmu_translate(vaddr_t vaddr, int len, int type) {
   return MEM_RET_FAIL;
 }
