@@ -1,3 +1,10 @@
+
+make run ARGS="--elf dummy.elf"
+
+
+
+
+
 git branch显示都有哪些分支，要在正确的目录下，比如我的就在ysyx-workbench下面创建的分支
 Ctrl+R：撤销撤销U
 
