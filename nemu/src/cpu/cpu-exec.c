@@ -20,8 +20,8 @@
 #include <memory/vaddr.h>
 #include "./../monitor/sdb/ftrace.h"
 #include <cpu/ifetch.h>
-#include <unistd.h>
-#include <fcntl.h>
+
+
 /* The assembly code of instructions executed is only output to the screen
  * when the number of instructions executed is less than this value.
  * This is useful when you use the `si' command.
@@ -108,85 +108,50 @@ static void iringbuf_log_to_file() {
   }
 }
 
-
-// 添加全局状态变量
-static const char *current_func = "???";
-static int call_depth = 0;
-static vaddr_t last_call_pc = 0;
-extern void init_ftrace(const char *elf_file);
-extern const char *elf_file;
 static void exec_once(Decode *s, vaddr_t pc) {
-  Log("nonononono---------------------nonononono");
-  int fd = open(elf_file, O_RDONLY);
-  if (fd != -1){
-  //查找当前函数
-  Log("yesyesyes------------------------yesyes");
-  const char *new_func = find_function_name(pc);
+  // 函数入口跟踪
+  IFDEF(CONFIG_FTRACE, trace_func_entry(pc));
   
-  // 如果进入新函数
-  if (new_func != current_func) {
-    current_func = new_func;
-    // 输出函数入口
-    printf("%*s--> %s() [0x%08x]\n", call_depth * 2, "", current_func, pc);
-  }
-  extern uint32_t inst_fetch(vaddr_t *pc, int len);  // 声明外部函数，指定参数和返回值类型
-  // 解码指令
-  word_t inst_ = inst_fetch(&s->pc, 4);
-  word_t opcode = inst_ & 0x7F;
-  word_t rd = (inst_ >> 7) & 0x1F;
-  word_t rs1 = (inst_ >> 15) & 0x1F;
-  word_t imm = (int32_t)(inst_ & 0xFFF00000) >> 20; // 符号扩展
-  
-  // JAL指令：函数调用
-  if (opcode == 0x6F) {
-    if (rd == 1) { // rd=1 (ra) 表示函数调用
-      vaddr_t target = s->dnpc;
-      const char *target_func = find_function_name(target);
-      
-      // 记录调用信息
-      last_call_pc = pc;
-      call_depth++;
-      
-      // 输出调用信息
-      printf("%*s  call %s() -> %s() [0x%08x]\n", 
-             call_depth * 2, "", current_func, target_func, target);
-    }
-  }
-  // JALR指令：函数调用或返回
-  else if (opcode == 0x67) {
-    if (rd != 0) { // 函数调用
-      vaddr_t target = s->dnpc;
-      const char *target_func = find_function_name(target);
-      
-      last_call_pc = pc;
-      call_depth++;
-      
-      printf("%*s  call %s() -> %s() [0x%08x]\n", call_depth * 2, "", current_func, target_func, target);
-    }
-    else if (rd == 0 && rs1 == 1 && imm == 0) { // 函数返回
-      if (call_depth > 0) call_depth--;
-      printf("%*s  return from %s() [0x%08x]\n", call_depth * 2, "", current_func, pc);
-    }
-  }
-}
-  // 原始执行逻辑
   s->pc = pc;
   s->snpc = pc;
   isa_exec_once(s);
-  cpu.pc = s->dnpc;
+  
+  // 函数调用/返回跟踪
+  
+    uint32_t inst = s->isa.inst;  // 移除.val
+    uint32_t opcode = inst & 0x7F;
+    uint32_t rd = (inst >> 7) & 0x1F;
+    uint32_t rs1 = (inst >> 15) & 0x1F;
+    int32_t imm = (int32_t)(inst & 0xFFF00000) >> 20;
+    
+    // JAL指令：函数调用
+    if (opcode == 0x6F && rd == 1) { // rd=1 (ra) 表示函数调用
+      trace_func_call(pc, s->dnpc);
+    }
+    // JALR指令：函数调用或返回
+    else if (opcode == 0x67) {
+      if (rd != 0) { // 函数调用
+        trace_func_call(pc, s->dnpc);
+      }
+      else if (rd == 0 && rs1 == 1 && imm == 0) { // 函数返回 (ret)
+        trace_func_ret(pc);
+      }
+    }
 
-#ifdef CONFIG_ITRACE
+  
+  cpu.pc = s->dnpc;
+  #ifdef CONFIG_ITRACE
   char *p = s->logbuf;
   p += snprintf(p, sizeof(s->logbuf), FMT_WORD ":", s->pc);
   int ilen = s->snpc - s->pc;
   int i;
-  uint8_t *inst = (uint8_t *)&s->isa.inst;
+  uint8_t *inst_bytes = (uint8_t *)&s->isa.inst;  // 重命名指针变量
 #ifdef CONFIG_ISA_x86
   for (i = 0; i < ilen; i ++) {
 #else
   for (i = ilen - 1; i >= 0; i --) {
 #endif
-    p += snprintf(p, 4, " %02x", inst[i]);
+    p += snprintf(p, 4, " %02x", inst_bytes[i]);  // 使用新变量名
   }
   int ilen_max = MUXDEF(CONFIG_ISA_x86, 8, 4);
   int space_len = ilen_max - ilen;
